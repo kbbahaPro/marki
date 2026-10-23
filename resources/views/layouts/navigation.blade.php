@@ -15,6 +15,12 @@
                     <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
                         {{ __('Dashboard') }}
                     </x-nav-link>
+                    <x-nav-link :href="route('event-types.index')" :active="request()->routeIs('event-types.*')">
+                        {{ __('Event types') }}
+                    </x-nav-link>
+                    <x-nav-link :href="route('availability.edit')" :active="request()->routeIs('availability.*')">
+                        {{ __('Availability') }}
+                    </x-nav-link>
                     @if (Auth::user()->is_admin)
                         <x-nav-link :href="route('team.index')" :active="request()->routeIs('team.*')">
                             {{ __('Team') }}
@@ -74,6 +80,12 @@
         <div class="pt-2 pb-3 space-y-1">
             <x-responsive-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
                 {{ __('Dashboard') }}
+            </x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('event-types.index')" :active="request()->routeIs('event-types.*')">
+                {{ __('Event types') }}
+            </x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('availability.edit')" :active="request()->routeIs('availability.*')">
+                {{ __('Availability') }}
             </x-responsive-nav-link>
             @if (Auth::user()->is_admin)
                 <x-responsive-nav-link :href="route('team.index')" :active="request()->routeIs('team.*')">

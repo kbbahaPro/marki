@@ -16,6 +16,9 @@ use DateTimeZone;
  *    host-local day that is max-days-ahead days from today;
  *  - the slot widened by its buffers overlaps no busy period (buffers may
  *    extend outside working hours; they only guard against other events);
+ *  - the slot itself overlaps no buffer zone of an existing booking. Buffer
+ *    zones may overlap each other, so the gap between two meetings is the
+ *    larger of the two buffers, not their sum;
  *  - the host's daily limit for that host-local date is not reached.
  *
  * Start times step from the beginning of each working range in real elapsed
@@ -24,8 +27,9 @@ use DateTimeZone;
 final class SlotEngine
 {
     /**
-     * @param  list<Period>  $busy  Busy periods in UTC (calendar events, existing bookings with their buffers).
+     * @param  list<Period>  $busy  Times the host is actually busy (calendar events, booked meetings), in UTC.
      * @param  array<string, int>  $bookingsPerDay  Existing bookings counted against the daily limit, keyed by host-local 'Y-m-d'.
+     * @param  list<Period>  $bufferZones  Existing bookings widened by their own buffers, in UTC.
      * @return list<CarbonImmutable> Slot start times in UTC, ascending.
      */
     public function slots(
@@ -35,6 +39,7 @@ final class SlotEngine
         CarbonImmutable $now,
         array $busy = [],
         array $bookingsPerDay = [],
+        array $bufferZones = [],
     ): array {
         $now = $now->utc();
         $earliest = $now->addMinutes($rules->minNoticeMinutes);
@@ -57,9 +62,13 @@ final class SlotEngine
 
         // Merged busy periods are disjoint and ascending, and candidate slots are
         // generated in ascending order, so one forward-moving cursor is enough.
-        $busy = array_map(fn (Period $p) => [$p->start->getTimestamp(), $p->end->getTimestamp()], $this->merge($busy));
+        $busy = $this->toTimestamps($busy);
         $busyCount = count($busy);
         $cursor = 0;
+
+        $zones = $this->toTimestamps($bufferZones);
+        $zoneCount = count($zones);
+        $zoneCursor = 0;
 
         $hostZone = new DateTimeZone($availability->timezone);
         $slots = [];
@@ -82,6 +91,14 @@ final class SlotEngine
                 }
 
                 if ($cursor < $busyCount && $busy[$cursor][0] < $blockedEnd) {
+                    continue;
+                }
+
+                while ($zoneCursor < $zoneCount && $zones[$zoneCursor][1] <= $start) {
+                    $zoneCursor++;
+                }
+
+                if ($zoneCursor < $zoneCount && $zones[$zoneCursor][0] < $start + $duration) {
                     continue;
                 }
 
@@ -149,6 +166,17 @@ final class SlotEngine
         }
 
         return $this->merge($windows);
+    }
+
+    /**
+     * Merge periods and return them as ascending [startTs, endTs] pairs.
+     *
+     * @param  list<Period>  $periods
+     * @return list<array{0: int, 1: int}>
+     */
+    private function toTimestamps(array $periods): array
+    {
+        return array_map(fn (Period $p) => [$p->start->getTimestamp(), $p->end->getTimestamp()], $this->merge($periods));
     }
 
     /**

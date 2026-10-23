@@ -4,6 +4,8 @@ use App\Http\Controllers\Admin\TeamController;
 use App\Http\Controllers\AvailabilityController;
 use App\Http\Controllers\EventTypeController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\Public\BookingConfirmationController;
+use App\Http\Controllers\Public\BookingPageController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -38,3 +40,27 @@ Route::middleware(['auth', 'verified', 'admin'])->prefix('team')->name('team.')-
 });
 
 require __DIR__.'/auth.php';
+
+/*
+|--------------------------------------------------------------------------
+| Public booking pages
+|--------------------------------------------------------------------------
+|
+| Registered last so they never shadow application routes. Usernames that
+| would collide are reserved in config/booking.php.
+|
+*/
+
+Route::get('/bookings/{booking}', BookingConfirmationController::class)->name('public.bookings.show');
+
+Route::pattern('username', '[a-z0-9](?:[a-z0-9-]{1,28})[a-z0-9]');
+Route::pattern('slug', '[a-z0-9]+(?:-[a-z0-9]+)*');
+
+Route::get('/{username}', [BookingPageController::class, 'profile'])->name('public.profile');
+Route::get('/{username}/{slug}', [BookingPageController::class, 'show'])->name('public.book');
+Route::get('/{username}/{slug}/slots', [BookingPageController::class, 'slots'])
+    ->middleware('throttle:booking-slots')
+    ->name('public.slots');
+Route::post('/{username}/{slug}', [BookingPageController::class, 'store'])
+    ->middleware('throttle:booking-submit')
+    ->name('public.book.store');

@@ -162,6 +162,32 @@ class SlotEngineTest extends TestCase
         $this->assertContains('2026-11-09T11:00Z', $slots);
     }
 
+    public function test_an_existing_bookings_buffer_zone_blocks_slots_without_buffers(): void
+    {
+        // Booked 10:00–10:30 with a 10-minute after-buffer: zone is 09:50–10:40 (10-min before-buffer too).
+        $slots = $this->slots(new SlotRules(30), $this->weekdays('UTC'), '2026-11-09T00:00Z', '2026-11-10T00:00Z',
+            busy: [new Period('2026-11-09T10:00Z', '2026-11-09T10:30Z')],
+            bufferZones: [new Period('2026-11-09T09:50Z', '2026-11-09T10:40Z')],
+        );
+
+        $this->assertNotContains('2026-11-09T09:30Z', $slots);
+        $this->assertNotContains('2026-11-09T10:30Z', $slots);
+        $this->assertContains('2026-11-09T11:00Z', $slots);
+    }
+
+    public function test_gap_between_meetings_is_the_larger_buffer_not_the_sum(): void
+    {
+        // Existing booking 10:00–10:30 with a 15-minute after-buffer; the new event
+        // type also has a 15-minute before-buffer. A 10:45 start leaves exactly 15 minutes.
+        $slots = $this->slots(new SlotRules(30, intervalMinutes: 15, bufferBeforeMinutes: 15), $this->weekdays('UTC'), '2026-11-09T00:00Z', '2026-11-10T00:00Z',
+            busy: [new Period('2026-11-09T10:00Z', '2026-11-09T10:30Z')],
+            bufferZones: [new Period('2026-11-09T10:00Z', '2026-11-09T10:45Z')],
+        );
+
+        $this->assertNotContains('2026-11-09T10:30Z', $slots);
+        $this->assertContains('2026-11-09T10:45Z', $slots);
+    }
+
     public function test_buffers_may_extend_outside_working_hours(): void
     {
         $slots = $this->slots(new SlotRules(30, bufferBeforeMinutes: 30, bufferAfterMinutes: 30), $this->weekdays('UTC'), '2026-11-09T00:00Z', '2026-11-10T00:00Z');
@@ -320,6 +346,7 @@ class SlotEngineTest extends TestCase
         array $busy = [],
         string $now = '2026-11-01T00:00Z',
         array $bookingsPerDay = [],
+        array $bufferZones = [],
     ): array {
         $slots = (new SlotEngine)->slots(
             $rules,
@@ -328,6 +355,7 @@ class SlotEngineTest extends TestCase
             CarbonImmutable::parse($now),
             $busy,
             $bookingsPerDay,
+            $bufferZones,
         );
 
         return array_map(fn (CarbonImmutable $s) => $s->utc()->format('Y-m-d\TH:i\Z'), $slots);

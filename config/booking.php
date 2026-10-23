@@ -54,6 +54,20 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Testing
+    |--------------------------------------------------------------------------
+    |
+    | Only honoured when APP_ENV=testing: pauses inside the booking transaction
+    | so the concurrency test can force two requests to overlap.
+    |
+    */
+
+    'testing' => [
+        'lock_pause_ms' => (int) env('BOOKING_TEST_LOCK_PAUSE_MS', 0),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Reserved usernames
     |--------------------------------------------------------------------------
     |

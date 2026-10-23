@@ -52,4 +52,9 @@ class User extends Authenticatable
     {
         return $this->hasMany(EventType::class);
     }
+
+    public function bookings(): HasMany
+    {
+        return $this->hasMany(Booking::class, 'host_id');
+    }
 }

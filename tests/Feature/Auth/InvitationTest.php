@@ -16,7 +16,12 @@ class InvitationTest extends TestCase
     public function test_public_registration_is_disabled(): void
     {
         $this->get('/register')->assertNotFound();
-        $this->post('/register', [])->assertNotFound();
+
+        // "/register" now falls into the public /{username} route, which is GET-only.
+        $this->post('/register', [
+            'name' => 'Eve', 'email' => 'eve@example.com', 'password' => 'password', 'password_confirmation' => 'password',
+        ])->assertMethodNotAllowed();
+        $this->assertDatabaseMissing('users', ['email' => 'eve@example.com']);
     }
 
     public function test_admin_can_invite_a_team_member(): void

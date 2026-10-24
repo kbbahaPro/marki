@@ -69,7 +69,7 @@ It is built to run on **inexpensive shared hosting**: plain PHP and MySQL, no Do
 ### Set up
 
 ```bash
-git clone https://github.com/YOUR-ORG/marki.git
+git clone https://github.com/kbbahaPro/marki.git
 cd marki
 
 composer install

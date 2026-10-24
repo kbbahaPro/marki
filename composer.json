@@ -1,10 +1,15 @@
 {
     "$schema": "https://getcomposer.org/schema.json",
-    "name": "laravel/laravel",
+    "name": "kbbahapro/marki",
     "type": "project",
     "description": "Marki: self-hosted team scheduling that runs on shared hosting. Mark that time.",
     "keywords": ["scheduling", "booking", "calendar", "laravel", "self-hosted"],
     "license": "MIT",
+    "homepage": "https://github.com/kbbahaPro/marki",
+    "support": {
+        "issues": "https://github.com/kbbahaPro/marki/issues",
+        "source": "https://github.com/kbbahaPro/marki"
+    },
     "require": {
         "php": "^8.4.1",
         "google/apiclient": "^2.20",

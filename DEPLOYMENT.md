@@ -58,7 +58,7 @@ Keep the application **outside** the web root so `.env`, `vendor/` and `storage/
 
 ```bash
 mkdir -p ~/apps
-git clone https://github.com/YOUR-ORG/marki.git ~/apps/marki
+git clone https://github.com/kbbahaPro/marki.git ~/apps/marki
 cd ~/apps/marki
 ```
 

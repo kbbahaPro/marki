@@ -21,9 +21,9 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
     'event_type_id', 'host_id', 'start_at', 'end_at', 'blocked_start_at', 'blocked_end_at',
     'guest_name', 'guest_email', 'guest_phone', 'guest_timezone', 'guest_notes',
     'status', 'manage_token_hash', 'location_type', 'location_value', 'rescheduled_from_id',
-    'ical_uid', 'ical_sequence',
+    'ical_uid', 'ical_sequence', 'manage_token',
 ])]
-#[Hidden(['manage_token_hash', 'active_start_at'])]
+#[Hidden(['manage_token_hash', 'manage_token', 'active_start_at'])]
 class Booking extends Model
 {
     /** @use HasFactory<BookingFactory> */
@@ -46,7 +46,30 @@ class Booking extends Model
             'location_type' => LocationType::class,
             'sync_status' => SyncStatus::class,
             'ical_sequence' => 'integer',
+            'manage_token' => 'encrypted',
         ];
+    }
+
+    /**
+     * Pending reminders for this booking, scheduled from the event type's offsets.
+     */
+    public function scheduleReminders(): void
+    {
+        $offsets = $this->eventType->reminder_offsets ?? [];
+
+        foreach ($offsets as $offset) {
+            $sendAt = $this->start_at->subMinutes($offset);
+
+            // A reminder whose moment has already passed would arrive late and confusing.
+            if ($sendAt->isFuture()) {
+                $this->reminders()->firstOrCreate(['offset_minutes' => $offset], ['send_at' => $sendAt]);
+            }
+        }
+    }
+
+    public function reminders(): HasMany
+    {
+        return $this->hasMany(BookingReminder::class);
     }
 
     /**

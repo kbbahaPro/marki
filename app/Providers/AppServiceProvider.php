@@ -6,6 +6,7 @@ use App\Events\BookingCancelled;
 use App\Events\BookingCreated;
 use App\Events\BookingRescheduled;
 use App\Listeners\CreateCalendarEvent;
+use App\Listeners\ScheduleReminders;
 use App\Listeners\SendBookingConfirmations;
 use App\Listeners\SendChangeEmails;
 use App\Listeners\UpdateCalendarAfterChange;
@@ -54,6 +55,8 @@ class AppServiceProvider extends ServiceProvider
 
         Event::listen([BookingCancelled::class, BookingRescheduled::class], UpdateCalendarAfterChange::class);
         Event::listen([BookingCancelled::class, BookingRescheduled::class], SendChangeEmails::class);
+
+        Event::listen([BookingCreated::class, BookingRescheduled::class, BookingCancelled::class], ScheduleReminders::class);
 
         // Public booking endpoints are unauthenticated, so limit them per IP.
         RateLimiter::for('booking-slots', fn (Request $request) => Limit::perMinute(60)->by($request->ip()));

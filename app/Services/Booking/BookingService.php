@@ -63,6 +63,7 @@ class BookingService
                 'guest_notes' => $guest->notes,
                 'status' => BookingStatus::Confirmed,
                 'manage_token_hash' => hash('sha256', $token),
+                'manage_token' => $token,
                 'location_type' => $eventType->location_type,
                 'location_value' => $eventType->location_value,
             ]);
@@ -117,6 +118,7 @@ class BookingService
                 'guest_notes' => $previous->guest_notes,
                 'status' => BookingStatus::Confirmed,
                 'manage_token_hash' => hash('sha256', $token),
+                'manage_token' => $token,
                 'location_type' => $previous->location_type,
                 'location_value' => $previous->location_value,
                 'rescheduled_from_id' => $previous->id,

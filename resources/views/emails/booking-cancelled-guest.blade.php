@@ -6,7 +6,7 @@
         @if ($byHost)
             {{ __(':host cancelled your :title on :date at :time (:timezone).', ['host' => $booking->host->name, 'title' => $booking->eventType->title, 'date' => $when['date'], 'time' => $when['time'], 'timezone' => $when['timezone']]) }}
         @else
-            {{ __('You cancelled your :title with :host on :date at :time (:timezone).', ['host' => $booking->host->name, 'title' => $booking->eventType->title, 'date' => $when['date'], 'time' => $when['time'], 'timezone' => $when['timezone']]) }}
+            {{ __('You cancelled your :title with :host on :date at :time (:timezone).', ['host' => $booking->hostNames(), 'title' => $booking->eventType->title, 'date' => $when['date'], 'time' => $when['time'], 'timezone' => $when['timezone']]) }}
         @endif
     </p>
 

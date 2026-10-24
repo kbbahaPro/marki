@@ -1,8 +1,8 @@
 @extends('emails.layout')
 
 @section('content')
-    <h1 style="margin:0 0 8px;font-size:20px;">{{ __('You are scheduled with :host', ['host' => $booking->host->name]) }}</h1>
-    @if ($booking->host->headline())
+    <h1 style="margin:0 0 8px;font-size:20px;">{{ __('You are scheduled with :host', ['host' => $booking->hostNames()]) }}</h1>
+    @if ($booking->hosts->count() <= 1 && $booking->host->headline())
         <p style="margin:-4px 0 12px;color:#6b7280;">{{ $booking->host->headline() }}</p>
     @endif
     <p style="margin:0;">{{ __('Hi :name, your booking is confirmed. The attached invitation adds it to your calendar.', ['name' => $booking->guest_name]) }}</p>

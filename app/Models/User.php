@@ -80,7 +80,7 @@ class User extends Authenticatable
         }
 
         // Bookings are kept as a record for guests and the team.
-        if ($this->bookings()->exists()) {
+        if (Booking::attendedBy($this->id)->exists()) {
             return __('Your account has bookings, which are kept as a record. Accounts with booking history cannot be deleted yet.');
         }
 

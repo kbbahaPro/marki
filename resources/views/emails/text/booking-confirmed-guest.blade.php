@@ -1,4 +1,4 @@
-{!! __('You are scheduled with :host', ['host' => $booking->host->name]) !!}
+{!! __('You are scheduled with :host', ['host' => $booking->hostNames()]) !!}
 
 {!! __('What') !!}: {!! $booking->eventType->title !!}
 {!! __('When') !!}: {!! $when['date'] !!}, {!! $when['time'] !!} ({!! $when['timezone'] !!})

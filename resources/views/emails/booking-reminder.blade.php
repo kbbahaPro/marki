@@ -1,7 +1,7 @@
 @extends('emails.layout')
 
 @section('content')
-    <h1 style="margin:0 0 8px;font-size:20px;">{{ __('Your meeting with :host starts :when', ['host' => $booking->host->name, 'when' => $startsIn]) }}</h1>
+    <h1 style="margin:0 0 8px;font-size:20px;">{{ __('Your meeting with :host starts :when', ['host' => $booking->hostNames(), 'when' => $startsIn]) }}</h1>
     <p style="margin:0;">{{ __('Hi :name, this is a reminder of your upcoming booking.', ['name' => $booking->guest_name]) }}</p>
 
     @include('emails.partials.booking-details')

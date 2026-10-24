@@ -8,18 +8,20 @@ use App\Mail\BookingConfirmedHost;
 use Illuminate\Support\Facades\Mail;
 
 /**
- * Queues the guest and host confirmations. Registered after
+ * Queues the guest confirmation and one for every host. Registered after
  * CreateCalendarEvent so the Meet link is already on the booking.
  */
 class SendBookingConfirmations
 {
     public function handle(BookingCreated $event): void
     {
-        $booking = $event->booking->fresh(['eventType', 'host', 'answers']);
+        $booking = $event->booking->fresh(['eventType', 'host', 'hosts', 'answers']);
 
         Mail::to($booking->guest_email, $booking->guest_name)
             ->send(new BookingConfirmedGuest($booking, $event->manageToken));
 
-        Mail::to($booking->host)->send(new BookingConfirmedHost($booking));
+        foreach ($booking->hosts as $host) {
+            Mail::to($host)->send(new BookingConfirmedHost($booking, $host));
+        }
     }
 }

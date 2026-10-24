@@ -2,8 +2,10 @@
 
 namespace Tests\Concurrency;
 
+use App\Enums\SchedulingType;
 use App\Models\Booking;
 use App\Models\EventType;
+use App\Models\Team;
 use App\Models\User;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
@@ -32,6 +34,9 @@ class ConcurrentBookingTest extends TestCase
 
     /** @var array<string, string> */
     private array $db;
+
+    /** @var list<int> Host (organizer) ids of the bookings made by the last race. */
+    private array $bookedHosts = [];
 
     protected function setUp(): void
     {
@@ -105,9 +110,81 @@ class ConcurrentBookingTest extends TestCase
         $this->assertSame(2, Booking::count());
     }
 
+    public function test_two_round_robin_bookings_for_one_slot_go_to_different_hosts(): void
+    {
+        [$alice, $bob] = User::factory()->count(2)->create();
+        $roundRobin = $this->teamEventType(SchedulingType::RoundRobin, [$alice, $bob]);
+
+        $results = $this->race([
+            [$roundRobin->id, '2026-11-09T10:00:00Z'],
+            [$roundRobin->id, '2026-11-09T10:00:00Z'],
+        ]);
+
+        $this->assertSame(['BOOKED', 'BOOKED'], $results);
+        $this->assertEqualsCanonicalizing([$alice->id, $bob->id], $this->bookedHosts);
+    }
+
+    public function test_round_robin_with_one_free_host_books_once(): void
+    {
+        [$alice, $bob] = User::factory()->count(2)->create();
+        $roundRobin = $this->teamEventType(SchedulingType::RoundRobin, [$alice, $bob]);
+        Booking::factory()->at($this->eventType($bob, 30), '2026-11-09T10:00:00Z')->create();
+
+        $results = $this->race([
+            [$roundRobin->id, '2026-11-09T10:00:00Z'],
+            [$roundRobin->id, '2026-11-09T10:00:00Z'],
+        ]);
+
+        $this->assertEqualsCanonicalizing(['BOOKED', 'UNAVAILABLE'], $results);
+        $this->assertSame([$alice->id], $this->bookedHosts);
+    }
+
+    public function test_a_co_host_cannot_be_double_booked_by_a_personal_booking(): void
+    {
+        [$alice, $bob] = User::factory()->count(2)->create();
+
+        $results = $this->race([
+            [$this->teamEventType(SchedulingType::Collective, [$alice, $bob])->id, '2026-11-09T10:00:00Z'],
+            [$this->eventType($bob, 30)->id, '2026-11-09T10:00:00Z'],
+        ]);
+
+        $this->assertEqualsCanonicalizing(['BOOKED', 'UNAVAILABLE'], $results);
+        $this->assertSame(1, Booking::count());
+    }
+
+    public function test_overlapping_host_sets_listed_in_opposite_orders_do_not_deadlock(): void
+    {
+        [$alice, $bob, $carol] = User::factory()->count(3)->create();
+
+        // Each pair of bookings shares a host; without one lock order they could wait on each other.
+        $results = $this->race([
+            [$this->teamEventType(SchedulingType::Collective, [$alice, $bob])->id, '2026-11-09T10:00:00Z'],
+            [$this->teamEventType(SchedulingType::Collective, [$bob, $alice])->id, '2026-11-09T11:00:00Z'],
+            [$this->teamEventType(SchedulingType::Collective, [$carol, $bob])->id, '2026-11-09T12:00:00Z'],
+            [$this->teamEventType(SchedulingType::Collective, [$alice, $carol])->id, '2026-11-09T13:00:00Z'],
+        ]);
+
+        $this->assertSame(['BOOKED', 'BOOKED', 'BOOKED', 'BOOKED'], $results);
+        $this->assertSame(8, DB::table('booking_hosts')->count());
+    }
+
     private function eventType(User $host, int $minutes): EventType
     {
         return EventType::factory()->for($host)->create(['duration_minutes' => $minutes]);
+    }
+
+    /**
+     * @param  list<User>  $hosts  Attached in this order.
+     */
+    private function teamEventType(SchedulingType $type, array $hosts): EventType
+    {
+        $eventType = EventType::factory()->forTeam(Team::factory()->create(), $type)->create(['duration_minutes' => 30]);
+
+        foreach ($hosts as $host) {
+            $eventType->hosts()->attach($host, ['is_fixed' => $type === SchedulingType::Collective]);
+        }
+
+        return $eventType;
     }
 
     /**
@@ -146,12 +223,15 @@ class ConcurrentBookingTest extends TestCase
 
         $startedAt = microtime(true);
 
-        $results = array_map(function (Process $process) {
+        $outputs = array_map(function (Process $process) {
             $process->wait();
             $this->assertTrue($process->isSuccessful(), "Booking process failed:\n".$process->getErrorOutput().$process->getOutput());
 
-            return explode(' ', trim($process->getOutput()))[0];
+            return explode(' ', trim($process->getOutput()));
         }, $processes);
+
+        $results = array_map(fn (array $output) => $output[0], $outputs);
+        $this->bookedHosts = array_values(array_map(fn (array $output) => (int) $output[2], array_filter($outputs, fn ($output) => $output[0] === 'BOOKED')));
 
         // If a process started after the release time the race did not really happen.
         $this->assertLessThan((float) $goAt, $startedAt + 0.0, 'Processes were not started before the release time.');

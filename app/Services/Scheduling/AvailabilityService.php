@@ -79,7 +79,8 @@ class AvailabilityService
      * at least one rotating host must be free; the free rotating hosts come
      * back with each start so the booking can be assigned among them.
      *
-     * @param  array<int, list<Period>>  $externalBusy  Pre-fetched calendar busy times keyed by host id; missing hosts are fetched.
+     * @param  array<int, list<Period>|null>  $externalBusy  Pre-fetched calendar busy times keyed by host id; null marks a
+     *                                                       calendar that could not be read; missing hosts are fetched.
      */
     public function teamSlots(EventType $eventType, Period $range, ?CarbonImmutable $now = null, array $externalBusy = [], ?Booking $ignoring = null): TeamSlots
     {
@@ -103,7 +104,8 @@ class AvailabilityService
 
         foreach ($hosts as $host) {
             // A host who cannot be checked (no schedule, calendar unreachable) counts as busy.
-            $starts = $availabilities->has($host->id)
+            $unreadable = array_key_exists($host->id, $externalBusy) && $externalBusy[$host->id] === null;
+            $starts = $availabilities->has($host->id) && ! $unreadable
                 ? $this->hostSlots($eventType, $host, $availabilities[$host->id], $range, $now, $externalBusy[$host->id] ?? null, $ignoring, $grid)
                 : null;
             $free = array_fill_keys(array_map(fn (CarbonImmutable $start) => $start->getTimestamp(), $starts ?? []), true);

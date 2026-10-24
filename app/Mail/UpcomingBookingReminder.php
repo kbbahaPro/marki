@@ -31,7 +31,7 @@ class UpcomingBookingReminder extends Mailable implements ShouldBeEncrypted, Sho
             replyTo: [new Address($this->booking->host->email, $this->booking->host->name)],
             subject: __('Reminder: :title with :host at :time (:date)', [
                 'title' => $this->booking->eventType->title,
-                'host' => $this->booking->host->name,
+                'host' => $this->booking->hostNames(),
                 'time' => $start->format('H:i'),
                 'date' => $start->translatedFormat('D, M j'),
             ]),

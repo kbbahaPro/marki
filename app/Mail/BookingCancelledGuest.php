@@ -26,7 +26,7 @@ class BookingCancelledGuest extends Mailable implements ShouldQueue
             replyTo: [new Address($this->booking->host->email, $this->booking->host->name)],
             subject: __('Cancelled: :title with :host on :date', [
                 'title' => $this->booking->eventType->title,
-                'host' => $this->booking->host->name,
+                'host' => $this->booking->hostNames(),
                 'date' => $this->booking->start_at->setTimezone($this->booking->guest_timezone)->translatedFormat('D, M j, H:i'),
             ]),
         );
@@ -43,7 +43,7 @@ class BookingCancelledGuest extends Mailable implements ShouldQueue
                 'when' => $this->bookingTime($this->booking, $this->booking->guest_timezone),
                 'byHost' => $this->booking->cancelled_by === 'host',
                 'bookAgainUrl' => $eventType->is_active && ! $eventType->trashed()
-                    ? route('public.book', [$this->booking->host->username, $eventType->slug])
+                    ? $eventType->publicUrl()
                     : null,
             ],
         );

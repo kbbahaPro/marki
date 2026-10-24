@@ -5,6 +5,7 @@ namespace App\Mail;
 use App\Enums\SyncStatus;
 use App\Mail\Concerns\DescribesBooking;
 use App\Models\Booking;
+use App\Models\User;
 use App\Services\Ics\IcsGenerator;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -22,11 +23,14 @@ class BookingConfirmedHost extends Mailable implements ShouldQueue
 {
     use DescribesBooking, Queueable, SerializesModels;
 
-    public function __construct(public Booking $booking) {}
+    /**
+     * @param  User|null  $recipient  The host this copy is for (co-hosts of team bookings get their own); defaults to the organizer.
+     */
+    public function __construct(public Booking $booking, public ?User $recipient = null) {}
 
     public function envelope(): Envelope
     {
-        $start = $this->booking->start_at->setTimezone($this->booking->host->timezone);
+        $start = $this->booking->start_at->setTimezone($this->recipientTimezone());
 
         return new Envelope(
             replyTo: [new Address($this->booking->guest_email, $this->booking->guest_name)],
@@ -46,7 +50,7 @@ class BookingConfirmedHost extends Mailable implements ShouldQueue
             view: 'emails.booking-confirmed-host',
             text: 'emails.text.booking-confirmed-host',
             with: [
-                'when' => $this->bookingTime($this->booking, $this->booking->host->timezone),
+                'when' => $this->bookingTime($this->booking, $this->recipientTimezone()),
                 'where' => $this->bookingPlace($this->booking),
                 'inGoogleCalendar' => $this->booking->sync_status === SyncStatus::Synced,
             ],
@@ -69,5 +73,10 @@ class BookingConfirmedHost extends Mailable implements ShouldQueue
             Attachment::fromData(fn () => app(IcsGenerator::class)->forBooking($this->booking), 'booking.ics')
                 ->withMime('text/calendar; charset=utf-8; method=REQUEST'),
         ];
+    }
+
+    private function recipientTimezone(): string
+    {
+        return ($this->recipient ?? $this->booking->host)->timezone;
     }
 }

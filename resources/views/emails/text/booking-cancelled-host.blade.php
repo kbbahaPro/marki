@@ -1,4 +1,4 @@
-{!! __(':guest cancelled', ['guest' => $booking->guest_name]) !!}
+{!! $reassigned ? __(':guest rescheduled to a time when another host takes it', ['guest' => $booking->guest_name]) : __(':guest cancelled', ['guest' => $booking->guest_name]) !!}
 
 {!! $booking->eventType->title !!}
 {!! $when['date'] !!}, {!! $when['time'] !!} ({!! $when['timezone'] !!})

@@ -5,6 +5,7 @@ namespace App\Mail;
 use App\Enums\SyncStatus;
 use App\Mail\Concerns\DescribesBooking;
 use App\Models\Booking;
+use App\Models\User;
 use App\Services\Ics\IcsGenerator;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -19,16 +20,20 @@ class BookingCancelledHost extends Mailable implements ShouldQueue
 {
     use DescribesBooking, Queueable, SerializesModels;
 
-    public function __construct(public Booking $booking) {}
+    /**
+     * @param  User|null  $recipient  The host this copy is for (co-hosts of team bookings get their own); defaults to the organizer.
+     * @param  bool  $reassigned  The guest rescheduled a round robin booking to a time another host takes.
+     */
+    public function __construct(public Booking $booking, public ?User $recipient = null, public bool $reassigned = false) {}
 
     public function envelope(): Envelope
     {
         return new Envelope(
             replyTo: [new Address($this->booking->guest_email, $this->booking->guest_name)],
-            subject: __('Cancelled: :guest – :title on :date', [
+            subject: __($this->reassigned ? 'Moved to another host: :guest – :title on :date' : 'Cancelled: :guest – :title on :date', [
                 'guest' => $this->booking->guest_name,
                 'title' => $this->booking->eventType->title,
-                'date' => $this->booking->start_at->setTimezone($this->booking->host->timezone)->translatedFormat('D, M j, H:i'),
+                'date' => $this->booking->start_at->setTimezone($this->recipientTimezone())->translatedFormat('D, M j, H:i'),
             ]),
         );
     }
@@ -39,8 +44,9 @@ class BookingCancelledHost extends Mailable implements ShouldQueue
             view: 'emails.booking-cancelled-host',
             text: 'emails.text.booking-cancelled-host',
             with: [
-                'when' => $this->bookingTime($this->booking, $this->booking->host->timezone),
+                'when' => $this->bookingTime($this->booking, $this->recipientTimezone()),
                 'removedFromGoogle' => $this->booking->sync_status === SyncStatus::Synced,
+                'reassigned' => $this->reassigned,
             ],
         );
     }
@@ -60,5 +66,10 @@ class BookingCancelledHost extends Mailable implements ShouldQueue
             Attachment::fromData(fn () => app(IcsGenerator::class)->forBooking($this->booking, IcsGenerator::CANCEL), 'cancel.ics')
                 ->withMime('text/calendar; charset=utf-8; method=CANCEL'),
         ];
+    }
+
+    private function recipientTimezone(): string
+    {
+        return ($this->recipient ?? $this->booking->host)->timezone;
     }
 }

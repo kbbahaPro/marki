@@ -37,10 +37,11 @@ class IcsGenerator
             'DTSTAMP:'.$this->utc(CarbonImmutable::now()),
             'DTSTART:'.$this->utc($booking->start_at),
             'DTEND:'.$this->utc($booking->end_at),
-            'SUMMARY:'.$this->text("{$booking->eventType->title} – {$booking->host->name} & {$booking->guest_name}"),
+            'SUMMARY:'.$this->text("{$booking->eventType->title} – {$booking->hostNames()} & {$booking->guest_name}"),
             'DESCRIPTION:'.$this->text($this->description($booking)),
             'ORGANIZER;CN='.$this->param($booking->host->name).':mailto:'.$booking->host->email,
             'ATTENDEE;CN='.$this->param($booking->guest_name).';ROLE=REQ-PARTICIPANT;PARTSTAT=ACCEPTED;RSVP=FALSE:mailto:'.$booking->guest_email,
+            ...$booking->coHosts()->map(fn ($host) => 'ATTENDEE;CN='.$this->param($host->name).';ROLE=REQ-PARTICIPANT;PARTSTAT=ACCEPTED;RSVP=FALSE:mailto:'.$host->email),
             'STATUS:'.($method === self::CANCEL ? 'CANCELLED' : 'CONFIRMED'),
             'TRANSP:OPAQUE',
         ];

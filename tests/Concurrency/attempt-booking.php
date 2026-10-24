@@ -6,7 +6,7 @@
  * sibling process, then tries to book.
  *
  * Usage: php attempt-booking.php <eventTypeId> <startIso> <goAtUnixFloat>
- * Prints "BOOKED <id>" or "UNAVAILABLE".
+ * Prints "BOOKED <id> <hostId>" or "UNAVAILABLE".
  */
 
 use App\Exceptions\SlotUnavailableException;
@@ -41,7 +41,7 @@ try {
         now: CarbonImmutable::parse('2026-11-01T00:00:00Z'),
     );
 
-    echo "BOOKED {$booking->id}";
+    echo "BOOKED {$booking->id} {$booking->host_id}";
 } catch (SlotUnavailableException) {
     echo 'UNAVAILABLE';
 }

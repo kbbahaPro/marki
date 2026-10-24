@@ -28,7 +28,7 @@ class MeetingLinkReady extends Mailable implements ShouldQueue
             replyTo: [new Address($this->booking->host->email, $this->booking->host->name)],
             subject: __('Meeting link: :title with :host', [
                 'title' => $this->booking->eventType->title,
-                'host' => $this->booking->host->name,
+                'host' => $this->booking->hostNames(),
             ]),
         );
     }

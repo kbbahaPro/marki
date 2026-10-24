@@ -40,7 +40,7 @@ class BookingRescheduledGuest extends Mailable implements ShouldBeEncrypted, Sho
             replyTo: [new Address($this->booking->host->email, $this->booking->host->name)],
             subject: __('Rescheduled: :title with :host on :date', [
                 'title' => $this->booking->eventType->title,
-                'host' => $this->booking->host->name,
+                'host' => $this->booking->hostNames(),
                 'date' => $this->booking->start_at->setTimezone($this->booking->guest_timezone)->translatedFormat('D, M j, H:i'),
             ]),
         );

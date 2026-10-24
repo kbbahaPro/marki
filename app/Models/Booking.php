@@ -10,6 +10,7 @@ use Database\Factories\BookingFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -158,11 +159,34 @@ class Booking extends Model
     }
 
     /**
-     * Everyone hosting this booking, organizer included.
+     * Everyone hosting this booking, organizer first.
      */
     public function hosts(): BelongsToMany
     {
-        return $this->belongsToMany(User::class, 'booking_hosts')->withPivot('is_organizer');
+        return $this->belongsToMany(User::class, 'booking_hosts')
+            ->withPivot('is_organizer')
+            ->orderByDesc('booking_hosts.is_organizer')
+            ->orderBy('users.name');
+    }
+
+    /**
+     * Hosts other than the organizer (team bookings only).
+     *
+     * @return Collection<int, User>
+     */
+    public function coHosts(): Collection
+    {
+        return $this->hosts->reject(fn (User $host) => $host->id === $this->host_id)->values();
+    }
+
+    /**
+     * "Alice", "Alice and Bob" or "Alice, Bob and Carol", for guest-facing text.
+     */
+    public function hostNames(): string
+    {
+        $names = $this->hosts->isEmpty() ? collect([$this->host->name]) : $this->hosts->pluck('name');
+
+        return $names->join(', ', ' '.__('and').' ');
     }
 
     public function answers(): HasMany

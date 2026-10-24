@@ -6,7 +6,7 @@
         @if ($by === 'host')
             {{ __('Hi :name, :host moved your :title to a new time. The attached invitation updates your calendar.', ['name' => $booking->guest_name, 'title' => $booking->eventType->title, 'host' => $booking->host->name]) }}
         @else
-            {{ __('Hi :name, your :title with :host has moved. The attached invitation updates your calendar.', ['name' => $booking->guest_name, 'title' => $booking->eventType->title, 'host' => $booking->host->name]) }}
+            {{ __('Hi :name, your :title with :host has moved. The attached invitation updates your calendar.', ['name' => $booking->guest_name, 'title' => $booking->eventType->title, 'host' => $booking->hostNames()]) }}
         @endif
     </p>
 

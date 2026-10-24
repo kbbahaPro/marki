@@ -36,7 +36,7 @@ class BookingConfirmedGuest extends Mailable implements ShouldBeEncrypted, Shoul
             replyTo: [new Address($this->booking->host->email, $this->booking->host->name)],
             subject: __('Confirmed: :title with :host on :date', [
                 'title' => $this->booking->eventType->title,
-                'host' => $this->booking->host->name,
+                'host' => $this->booking->hostNames(),
                 'date' => $start->translatedFormat('D, M j, H:i'),
             ]),
         );

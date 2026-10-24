@@ -100,6 +100,14 @@ class GoogleCalendarService implements CalendarProvider
 
     public function moveEvent(Booking $previous, Booking $booking): void
     {
+        // A round robin reschedule can hand the booking to another host: the event moves calendars.
+        if ($previous->host_id !== $booking->host_id) {
+            $this->deleteEvent($previous);
+            $this->createEvent($booking);
+
+            return;
+        }
+
         $connection = $booking->host->googleConnection;
 
         if ($connection === null) {
@@ -121,6 +129,7 @@ class GoogleCalendarService implements CalendarProvider
                 return $calendar->events->patch($connection->write_calendar_id, $previous->external_event_id, new Event([
                     'start' => ['dateTime' => $booking->start_at->toRfc3339String(), 'timeZone' => 'UTC'],
                     'end' => ['dateTime' => $booking->end_at->toRfc3339String(), 'timeZone' => 'UTC'],
+                    'attendees' => $this->attendees($booking),
                 ]), ['sendUpdates' => 'none']);
             } catch (GoogleServiceException $e) {
                 // The host deleted the event in Google Calendar: create a fresh one below.
@@ -145,7 +154,7 @@ class GoogleCalendarService implements CalendarProvider
             'sync_error' => null,
         ])->save();
 
-        $this->forgetBusyTimes($booking->host);
+        $booking->hosts->each(fn (User $host) => $this->forgetBusyTimes($host));
     }
 
     public function deleteEvent(Booking $booking): void
@@ -169,7 +178,7 @@ class GoogleCalendarService implements CalendarProvider
             }
         });
 
-        $this->forgetBusyTimes($booking->host);
+        $booking->hosts->each(fn (User $host) => $this->forgetBusyTimes($host));
     }
 
     /**
@@ -328,7 +337,8 @@ class GoogleCalendarService implements CalendarProvider
             'description' => implode("\n", $lines),
             'start' => ['dateTime' => $booking->start_at->toRfc3339String(), 'timeZone' => 'UTC'],
             'end' => ['dateTime' => $booking->end_at->toRfc3339String(), 'timeZone' => 'UTC'],
-            'attendees' => [['email' => $booking->guest_email, 'displayName' => $booking->guest_name]],
+            // Co-hosts of team bookings are attendees of the organizer's event.
+            'attendees' => $this->attendees($booking),
             'guestsCanModify' => false,
             'reminders' => ['useDefault' => true],
         ];
@@ -347,6 +357,17 @@ class GoogleCalendarService implements CalendarProvider
         }
 
         return new Event(array_filter($event, fn ($value) => $value !== null));
+    }
+
+    /**
+     * @return list<array{email: string, displayName: string}>
+     */
+    private function attendees(Booking $booking): array
+    {
+        return [
+            ['email' => $booking->guest_email, 'displayName' => $booking->guest_name],
+            ...$booking->coHosts()->map(fn (User $host) => ['email' => $host->email, 'displayName' => $host->name]),
+        ];
     }
 
     private function meetLink(Event $event): ?string

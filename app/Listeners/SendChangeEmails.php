@@ -11,33 +11,44 @@ use App\Mail\BookingRescheduledHost;
 use Illuminate\Support\Facades\Mail;
 
 /**
- * Tells guest and host about cancellations and reschedules. Registered after
- * UpdateCalendarAfterChange so emails reflect the calendar's final state.
+ * Tells the guest and every host about cancellations and reschedules.
+ * Registered after UpdateCalendarAfterChange so emails reflect the
+ * calendar's final state.
  */
 class SendChangeEmails
 {
     public function handle(BookingCancelled|BookingRescheduled $event): void
     {
-        $booking = $event->booking->fresh(['eventType', 'host']);
+        $booking = $event->booking->fresh(['eventType', 'host', 'hosts']);
 
         if ($event instanceof BookingCancelled) {
             Mail::to($booking->guest_email, $booking->guest_name)->send(new BookingCancelledGuest($booking));
 
-            // Hosts who cancelled themselves do not need to be told.
-            if ($booking->cancelled_by !== 'host') {
-                Mail::to($booking->host)->send(new BookingCancelledHost($booking));
+            // A host who cancelled knows already; co-hosts still need telling.
+            // (Cancellations do not yet record which host cancelled, so the organizer is assumed.)
+            foreach ($booking->hosts as $host) {
+                if ($booking->cancelled_by !== 'host' || $host->id !== $booking->host_id) {
+                    Mail::to($host)->send(new BookingCancelledHost($booking, $host));
+                }
             }
 
             return;
         }
 
-        $previous = $event->previous->fresh();
+        $previous = $event->previous->fresh(['eventType', 'host', 'hosts']);
 
         Mail::to($booking->guest_email, $booking->guest_name)
             ->send(new BookingRescheduledGuest($previous, $booking, $event->manageToken, $event->by));
 
-        if ($event->by !== 'host') {
-            Mail::to($booking->host)->send(new BookingRescheduledHost($previous, $booking));
+        foreach ($booking->hosts as $host) {
+            if ($event->by !== 'host' || $host->id !== $booking->host_id) {
+                Mail::to($host)->send(new BookingRescheduledHost($previous, $booking, $host));
+            }
+        }
+
+        // Round robin hosts who no longer have the booking.
+        foreach ($previous->hosts->diff($booking->hosts) as $host) {
+            Mail::to($host)->send(new BookingCancelledHost($previous, $host, reassigned: true));
         }
     }
 }

@@ -1,6 +1,6 @@
 {!! __('Your booking was cancelled') !!}
 
-{!! $booking->eventType->title !!} – {!! $booking->host->name !!}
+{!! $booking->eventType->title !!} – {!! $booking->hostNames() !!}
 {!! $when['date'] !!}, {!! $when['time'] !!} ({!! $when['timezone'] !!})
 @if ($booking->cancel_reason)
 

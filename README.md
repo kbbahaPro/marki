@@ -230,4 +230,4 @@ Issues and pull requests are welcome. Please:
 
 ## License
 
-MIT, as declared in `composer.json`.
+MIT. See [LICENSE](LICENSE). Copyright (c) 2026 TPLUS INNOVATION.

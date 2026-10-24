@@ -19,8 +19,10 @@ class IcsGenerator
 
     public const CANCEL = 'CANCEL';
 
-    public function forBooking(Booking $booking, string $method = self::REQUEST, int $sequence = 0): string
+    public function forBooking(Booking $booking, string $method = self::REQUEST, ?int $sequence = null): string
     {
+        $sequence ??= $booking->ical_sequence ?? 0;
+
         $booking->loadMissing(['eventType', 'host']);
 
         $lines = [
@@ -62,7 +64,7 @@ class IcsGenerator
      */
     public function uid(Booking $booking): string
     {
-        return $booking->uid.'@'.(parse_url(config('app.url'), PHP_URL_HOST) ?: 'localhost');
+        return ($booking->ical_uid ?? $booking->uid).'@'.(parse_url(config('app.url'), PHP_URL_HOST) ?: 'localhost');
     }
 
     private function description(Booking $booking): string

@@ -14,6 +14,12 @@
                 <li>📍 {{ $eventType->location_type === LocationType::Custom ? $eventType->location_value : $eventType->location_type->label() }}</li>
                 <li x-show="selected" x-cloak class="font-medium text-gray-900">🗓 <span x-text="selected ? formatLong(selected) : ''"></span></li>
             </ul>
+            @if ($reschedule)
+                <div class="mt-4 rounded-md bg-amber-50 p-3 text-sm text-amber-800">
+                    <div class="font-medium">{{ __('Rescheduling') }}</div>
+                    <div>{{ __('Currently') }}: {{ $reschedule->start_at->setTimezone($reschedule->guest_timezone)->translatedFormat('D, M j, H:i') }} ({{ str_replace('_', ' ', $reschedule->guest_timezone) }})</div>
+                </div>
+            @endif
             @if ($eventType->description)
                 <div class="mt-4 text-sm text-gray-600 whitespace-pre-line">{{ $eventType->description }}</div>
             @endif
@@ -73,15 +79,25 @@
             </div>
 
             {{-- Step 2: details --}}
-            <form method="post" action="{{ route('public.book.store', [$host->username, $eventType->slug]) }}" x-show="selected" x-cloak class="space-y-4">
+            <form method="post" action="{{ $formAction }}" x-show="selected" x-cloak class="space-y-4">
                 @csrf
                 <input type="hidden" name="start" :value="selected">
                 <input type="hidden" name="timezone" :value="timezone">
 
                 <div class="flex items-center justify-between gap-2">
-                    <h2 class="text-lg font-medium text-gray-900">{{ __('Enter details') }}</h2>
+                    <h2 class="text-lg font-medium text-gray-900">{{ $reschedule ? __('Confirm the new time') : __('Enter details') }}</h2>
                     <button type="button" @click="selected = null" class="text-sm text-indigo-600 hover:text-indigo-800">← {{ __('Change time') }}</button>
                 </div>
+
+                @if ($reschedule)
+                    <p class="text-sm text-gray-600">
+                        {{ __('Your booking will move to') }}
+                        <strong class="text-gray-900" x-text="selected ? formatLong(selected) : ''"></strong>.
+                        {{ __('Your details and answers stay the same.') }}
+                    </p>
+
+                    <x-primary-button>{{ __('Reschedule booking') }}</x-primary-button>
+                @else
 
                 <div>
                     <x-input-label for="name" :value="__('Name')" />
@@ -148,6 +164,7 @@
                 </div>
 
                 <x-primary-button>{{ __('Confirm booking') }}</x-primary-button>
+                @endif
             </form>
         </section>
     </div>

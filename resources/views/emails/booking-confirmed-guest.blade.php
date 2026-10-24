@@ -12,5 +12,5 @@
         </p>
     @endif
 
-    <p style="margin:0;color:#6b7280;font-size:13px;">{{ __('Need to change something? Reply to this email to reach :host.', ['host' => $booking->host->name]) }}</p>
+    @include('emails.partials.manage-links')
 @endsection

@@ -50,6 +50,8 @@ class BookingConfirmedGuest extends Mailable implements ShouldBeEncrypted, Shoul
             with: [
                 'when' => $this->bookingTime($this->booking, $this->booking->guest_timezone),
                 'where' => $this->bookingPlace($this->booking),
+                'manageUrl' => route('bookings.manage', $this->manageToken),
+                'rescheduleUrl' => route('bookings.reschedule', $this->manageToken),
             ],
         );
     }

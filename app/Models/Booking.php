@@ -15,11 +15,13 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 #[Fillable([
     'event_type_id', 'host_id', 'start_at', 'end_at', 'blocked_start_at', 'blocked_end_at',
     'guest_name', 'guest_email', 'guest_phone', 'guest_timezone', 'guest_notes',
     'status', 'manage_token_hash', 'location_type', 'location_value', 'rescheduled_from_id',
+    'ical_uid', 'ical_sequence',
 ])]
 #[Hidden(['manage_token_hash', 'active_start_at'])]
 class Booking extends Model
@@ -43,7 +45,34 @@ class Booking extends Model
             'status' => BookingStatus::class,
             'location_type' => LocationType::class,
             'sync_status' => SyncStatus::class,
+            'ical_sequence' => 'integer',
         ];
+    }
+
+    /**
+     * Find a booking from the raw token in a guest's manage link.
+     */
+    public static function findByManageToken(string $token): ?self
+    {
+        return static::where('manage_token_hash', hash('sha256', $token))->first();
+    }
+
+    /**
+     * Whether the guest can still cancel or move it.
+     */
+    public function isChangeable(): bool
+    {
+        return $this->status === BookingStatus::Confirmed && $this->start_at->isFuture();
+    }
+
+    public function rescheduledFrom(): BelongsTo
+    {
+        return $this->belongsTo(self::class, 'rescheduled_from_id');
+    }
+
+    public function rescheduledTo(): HasOne
+    {
+        return $this->hasOne(self::class, 'rescheduled_from_id');
     }
 
     /**

@@ -44,9 +44,10 @@ class AvailabilityService
      * Bookable start times (UTC) for an event type inside $range.
      *
      * @param  list<Period>|null  $externalBusy  Pre-fetched calendar busy times; fetched when null.
+     * @param  Booking|null  $ignoring  A booking being rescheduled: its own time does not block the move.
      * @return list<CarbonImmutable>
      */
-    public function slots(EventType $eventType, Period $range, ?CarbonImmutable $now = null, ?array $externalBusy = null): array
+    public function slots(EventType $eventType, Period $range, ?CarbonImmutable $now = null, ?array $externalBusy = null, ?Booking $ignoring = null): array
     {
         $schedule = $eventType->effectiveSchedule();
 
@@ -65,7 +66,13 @@ class AvailabilityService
 
         $bookings = Booking::query()
             ->blockingHost($eventType->user_id, $lookup)
+            ->when($ignoring, fn ($q) => $q->whereKeyNot($ignoring->id))
             ->get(['start_at', 'end_at', 'blocked_start_at', 'blocked_end_at']);
+
+        if ($ignoring) {
+            // The booking's own event also appears in the host's calendar busy times.
+            $externalBusy = $this->subtract($externalBusy, new Period($ignoring->start_at, $ignoring->end_at));
+        }
 
         return $this->engine->slots(
             rules: SlotRules::fromEventType($eventType),
@@ -73,7 +80,7 @@ class AvailabilityService
             range: $range,
             now: $now ?? CarbonImmutable::now(),
             busy: [...$externalBusy, ...$bookings->map(fn (Booking $b) => new Period($b->start_at, $b->end_at))],
-            bookingsPerDay: $this->bookingsPerDay($eventType, $lookup, $schedule->timezone),
+            bookingsPerDay: $this->bookingsPerDay($eventType, $lookup, $schedule->timezone, $ignoring),
             bufferZones: $bookings->map(fn (Booking $b) => new Period($b->blocked_start_at, $b->blocked_end_at))->all(),
         );
     }
@@ -83,10 +90,10 @@ class AvailabilityService
      *
      * @param  list<Period>|null  $externalBusy
      */
-    public function isAvailable(EventType $eventType, CarbonImmutable $start, ?CarbonImmutable $now = null, ?array $externalBusy = null): bool
+    public function isAvailable(EventType $eventType, CarbonImmutable $start, ?CarbonImmutable $now = null, ?array $externalBusy = null, ?Booking $ignoring = null): bool
     {
         $start = $start->utc();
-        $slots = $this->slots($eventType, new Period($start, $start->addSecond()), $now, $externalBusy);
+        $slots = $this->slots($eventType, new Period($start, $start->addSecond()), $now, $externalBusy, $ignoring);
 
         return count($slots) === 1 && $slots[0]->equalTo($start);
     }
@@ -96,7 +103,7 @@ class AvailabilityService
      *
      * @return array<string, int>
      */
-    private function bookingsPerDay(EventType $eventType, Period $lookup, string $timezone): array
+    private function bookingsPerDay(EventType $eventType, Period $lookup, string $timezone, ?Booking $ignoring): array
     {
         if ($eventType->daily_limit === null) {
             return [];
@@ -106,9 +113,39 @@ class AvailabilityService
         return Booking::query()
             ->confirmed()
             ->where('event_type_id', $eventType->id)
+            ->when($ignoring, fn ($q) => $q->whereKeyNot($ignoring->id))
             ->whereBetween('start_at', [$lookup->start->subDay(), $lookup->end->addDay()])
             ->pluck('start_at')
             ->countBy(fn (CarbonImmutable $start) => $start->setTimezone($timezone)->toDateString())
             ->all();
+    }
+
+    /**
+     * Remove $hole from each period, splitting periods that contain it.
+     *
+     * @param  list<Period>  $periods
+     * @return list<Period>
+     */
+    private function subtract(array $periods, Period $hole): array
+    {
+        $result = [];
+
+        foreach ($periods as $period) {
+            if (! $period->overlaps($hole)) {
+                $result[] = $period;
+
+                continue;
+            }
+
+            if ($period->start < $hole->start) {
+                $result[] = new Period($period->start, $hole->start);
+            }
+
+            if ($period->end > $hole->end) {
+                $result[] = new Period($hole->end, $period->end);
+            }
+        }
+
+        return $result;
     }
 }

@@ -6,6 +6,7 @@ use App\Http\Controllers\EventTypeController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Public\BookingConfirmationController;
 use App\Http\Controllers\Public\BookingPageController;
+use App\Http\Controllers\Public\ManageBookingController;
 use App\Http\Controllers\Settings\CalendarController;
 use App\Mail\BookingConfirmedGuest;
 use App\Mail\BookingConfirmedHost;
@@ -87,6 +88,14 @@ if (app()->environment('local')) {
 */
 
 Route::get('/bookings/{booking}', BookingConfirmationController::class)->name('public.bookings.show');
+
+Route::prefix('/manage/{token}')->where(['token' => '[A-Za-z0-9]{64}'])->name('bookings.')->group(function () {
+    Route::get('/', [ManageBookingController::class, 'show'])->middleware('throttle:booking-slots')->name('manage');
+    Route::post('/cancel', [ManageBookingController::class, 'cancel'])->middleware('throttle:booking-submit')->name('cancel');
+    Route::get('/reschedule', [ManageBookingController::class, 'editTime'])->middleware('throttle:booking-slots')->name('reschedule');
+    Route::get('/reschedule/slots', [ManageBookingController::class, 'slots'])->middleware('throttle:booking-slots')->name('reschedule.slots');
+    Route::post('/reschedule', [ManageBookingController::class, 'reschedule'])->middleware('throttle:booking-submit')->name('reschedule.store');
+});
 
 Route::pattern('username', '[a-z0-9](?:[a-z0-9-]{1,28})[a-z0-9]');
 Route::pattern('slug', '[a-z0-9]+(?:-[a-z0-9]+)*');

@@ -11,7 +11,7 @@
     <div class="bg-white shadow sm:rounded-lg p-6 sm:p-8 max-w-xl mx-auto text-center">
         @if ($booking->status === BookingStatus::Confirmed)
             <div class="text-4xl" aria-hidden="true">✓</div>
-            <h1 class="mt-2 text-2xl font-semibold text-gray-900">{{ __('You are scheduled') }}</h1>
+            <h1 class="mt-2 text-2xl font-semibold text-gray-900">{{ session('rescheduled') ? __('Your booking has a new time') : __('You are scheduled') }}</h1>
             <p class="mt-1 text-gray-600">{{ __('A confirmation has been sent to your email address.') }}</p>
         @else
             <h1 class="text-2xl font-semibold text-gray-900">{{ __('This booking was cancelled') }}</h1>
@@ -35,5 +35,15 @@
                 @endif
             </dd></div>
         </dl>
+
+        {{-- The token is only in the session right after booking; afterwards it lives in the guest's email. --}}
+        @if (session('manage_token') && $booking->status === BookingStatus::Confirmed)
+            <p class="mt-6 border-t border-gray-100 pt-6 text-sm text-gray-600">
+                {{ __('Need to make a change?') }}
+                <a href="{{ route('bookings.reschedule', session('manage_token')) }}" class="text-indigo-600 underline">{{ __('Reschedule') }}</a>
+                ·
+                <a href="{{ route('bookings.manage', session('manage_token')) }}" class="text-indigo-600 underline">{{ __('Cancel') }}</a>
+            </p>
+        @endif
     </div>
 </x-public-layout>

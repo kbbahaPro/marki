@@ -2,9 +2,13 @@
 
 namespace App\Providers;
 
+use App\Events\BookingCancelled;
 use App\Events\BookingCreated;
+use App\Events\BookingRescheduled;
 use App\Listeners\CreateCalendarEvent;
 use App\Listeners\SendBookingConfirmations;
+use App\Listeners\SendChangeEmails;
+use App\Listeners\UpdateCalendarAfterChange;
 use App\Services\Calendar\CalendarProvider;
 use App\Services\Calendar\Google\GoogleApi;
 use App\Services\Calendar\Google\GoogleCalendarService;
@@ -47,6 +51,9 @@ class AppServiceProvider extends ServiceProvider
         // before the confirmation emails are built.
         Event::listen(BookingCreated::class, CreateCalendarEvent::class);
         Event::listen(BookingCreated::class, SendBookingConfirmations::class);
+
+        Event::listen([BookingCancelled::class, BookingRescheduled::class], UpdateCalendarAfterChange::class);
+        Event::listen([BookingCancelled::class, BookingRescheduled::class], SendChangeEmails::class);
 
         // Public booking endpoints are unauthenticated, so limit them per IP.
         RateLimiter::for('booking-slots', fn (Request $request) => Limit::perMinute(60)->by($request->ip()));

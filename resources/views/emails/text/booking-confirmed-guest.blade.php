@@ -5,6 +5,7 @@
 {!! __('Where') !!}: {!! $where['url'] ?? $where['text'] !!}
 
 {!! __('The attached invitation adds it to your calendar.') !!}
-{!! __('Need to change something? Reply to this email to reach :host.', ['host' => $booking->host->name]) !!}
+{!! __('Reschedule') !!}: {!! $rescheduleUrl !!}
+{!! __('Cancel') !!}: {!! $manageUrl !!}
 
 {!! config('app.name') !!}

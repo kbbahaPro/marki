@@ -98,6 +98,56 @@ class GoogleCalendarService implements CalendarProvider
         ])->save();
     }
 
+    public function moveEvent(Booking $previous, Booking $booking): void
+    {
+        $connection = $booking->host->googleConnection;
+
+        if ($connection === null) {
+            $booking->forceFill(['sync_status' => SyncStatus::Skipped, 'sync_error' => null])->save();
+
+            return;
+        }
+
+        if ($previous->external_event_id === null) {
+            $this->createEvent($booking);
+
+            return;
+        }
+
+        $this->ensureActive($connection);
+
+        $event = $this->call($connection, function (Calendar $calendar) use ($previous, $booking, $connection) {
+            try {
+                return $calendar->events->patch($connection->write_calendar_id, $previous->external_event_id, new Event([
+                    'start' => ['dateTime' => $booking->start_at->toRfc3339String(), 'timeZone' => 'UTC'],
+                    'end' => ['dateTime' => $booking->end_at->toRfc3339String(), 'timeZone' => 'UTC'],
+                ]), ['sendUpdates' => 'none']);
+            } catch (GoogleServiceException $e) {
+                // The host deleted the event in Google Calendar: create a fresh one below.
+                if (in_array($e->getCode(), [404, 410], true)) {
+                    return null;
+                }
+
+                throw $e;
+            }
+        });
+
+        if ($event === null) {
+            $this->createEvent($booking);
+
+            return;
+        }
+
+        $booking->forceFill([
+            'external_event_id' => $event->getId(),
+            'meeting_url' => $this->meetLink($event) ?? $booking->meeting_url,
+            'sync_status' => SyncStatus::Synced,
+            'sync_error' => null,
+        ])->save();
+
+        $this->forgetBusyTimes($booking->host);
+    }
+
     public function deleteEvent(Booking $booking): void
     {
         $connection = $booking->host->googleConnection;

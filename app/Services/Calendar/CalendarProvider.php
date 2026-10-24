@@ -21,6 +21,15 @@ interface CalendarProvider extends BusyTimeSource
     public function createEvent(Booking $booking): void;
 
     /**
+     * Move the previous booking's event to the new booking's time (keeping
+     * its video link), or create one if there was none, and record the result
+     * on the new booking.
+     *
+     * @throws CalendarUnavailableException
+     */
+    public function moveEvent(Booking $previous, Booking $booking): void;
+
+    /**
      * Remove the booking's event from the host's calendar, if there is one.
      *
      * @throws CalendarUnavailableException

@@ -22,7 +22,8 @@ use DateTimeZone;
  *  - the host's daily limit for that host-local date is not reached.
  *
  * Start times step from the beginning of each working range in real elapsed
- * time, so they stay correct across DST changes.
+ * time, so they stay correct across DST changes. Team event types instead
+ * test every host against one shared grid (anchoredGrid()).
  */
 final class SlotEngine
 {
@@ -30,6 +31,8 @@ final class SlotEngine
      * @param  list<Period>  $busy  Times the host is actually busy (calendar events, booked meetings), in UTC.
      * @param  array<string, int>  $bookingsPerDay  Existing bookings counted against the daily limit, keyed by host-local 'Y-m-d'.
      * @param  list<Period>  $bufferZones  Existing bookings widened by their own buffers, in UTC.
+     * @param  list<int>|null  $candidates  Ascending UTC timestamps to test instead of stepping from each
+     *                                      working range (a team's shared grid, see anchoredGrid()).
      * @return list<CarbonImmutable> Slot start times in UTC, ascending.
      */
     public function slots(
@@ -40,6 +43,7 @@ final class SlotEngine
         array $busy = [],
         array $bookingsPerDay = [],
         array $bufferZones = [],
+        ?array $candidates = null,
     ): array {
         $now = $now->utc();
         $earliest = $now->addMinutes($rules->minNoticeMinutes);
@@ -75,14 +79,8 @@ final class SlotEngine
 
         foreach ($this->workingWindows($availability, $from, $until) as $window) {
             $windowEnd = $window->end->getTimestamp();
-            $start = $window->start->getTimestamp();
 
-            // Jump straight to the first start time on this window's grid that is >= $from.
-            if ($start < $fromTs) {
-                $start += (int) ceil(($fromTs - $start) / $step) * $step;
-            }
-
-            for (; $start + $duration <= $windowEnd && $start < $untilTs; $start += $step) {
+            foreach ($this->startsIn($window->start->getTimestamp(), $windowEnd - $duration, $fromTs, $untilTs, $step, $candidates) as $start) {
                 $blockedStart = $start - $before;
                 $blockedEnd = $start + $duration + $after;
 
@@ -120,6 +118,61 @@ final class SlotEngine
     }
 
     /**
+     * One start-time grid shared by several hosts, as ascending UTC timestamps in $range.
+     *
+     * Each host's own grid steps from the start of their working ranges, so a
+     * host starting at 9:15 and one starting at 9:00 would never share a slot.
+     * Here the hosts' working windows are merged, and each merged window's grid
+     * is anchored to the top of the hour (in the time zone of the host whose
+     * window starts it): :00/:30 for a 30-minute step, :00/:15/:30/:45 for 15.
+     *
+     * @param  list<WeeklyAvailability>  $availabilities
+     * @return list<int>
+     */
+    public function anchoredGrid(array $availabilities, Period $range, int $stepMinutes): array
+    {
+        $windows = [];
+
+        foreach ($availabilities as $availability) {
+            foreach ($this->workingWindows($availability, $range->start, $range->end) as $window) {
+                $local = $window->start->setTimezone($availability->timezone);
+                $start = $window->start->getTimestamp();
+                $windows[] = [$start, $window->end->getTimestamp(), $start - $local->minute * 60 - $local->second];
+            }
+        }
+
+        usort($windows, fn (array $a, array $b) => $a[0] <=> $b[0]);
+
+        // Merge overlapping or touching windows; a merged window keeps its first anchor.
+        $merged = [];
+        foreach ($windows as $window) {
+            $last = array_key_last($merged);
+
+            if ($last !== null && $window[0] <= $merged[$last][1]) {
+                $merged[$last][1] = max($merged[$last][1], $window[1]);
+            } else {
+                $merged[] = $window;
+            }
+        }
+
+        $step = $stepMinutes * 60;
+        $fromTs = $range->start->getTimestamp();
+        $untilTs = $range->end->getTimestamp();
+        $grid = [];
+
+        foreach ($merged as [$start, $end, $anchor]) {
+            $first = max($start, $fromTs);
+            $t = $anchor + (int) ceil(($first - $anchor) / $step) * $step;
+
+            for (; $t < $end && $t < $untilTs; $t += $step) {
+                $grid[] = $t;
+            }
+        }
+
+        return $grid;
+    }
+
+    /**
      * Group UTC slot starts by calendar date in a viewer's time zone.
      *
      * @param  list<CarbonImmutable>  $slots
@@ -135,6 +188,43 @@ final class SlotEngine
         }
 
         return $grouped;
+    }
+
+    /**
+     * Candidate start timestamps in one working window, ascending: from $from
+     * (inclusive) to the last start that still fits ($lastStart, inclusive) and
+     * before $until. Steps from the window start unless a shared grid is given.
+     *
+     * @param  list<int>|null  $candidates
+     * @return iterable<int>
+     */
+    private function startsIn(int $windowStart, int $lastStart, int $from, int $until, int $step, ?array $candidates): iterable
+    {
+        $first = max($windowStart, $from);
+
+        if ($candidates === null) {
+            // Jump straight to the first start time on this window's grid that is >= $from.
+            for ($start = $windowStart + (int) ceil(($first - $windowStart) / $step) * $step; $start <= $lastStart && $start < $until; $start += $step) {
+                yield $start;
+            }
+
+            return;
+        }
+
+        // Binary search for the first candidate >= $first.
+        [$low, $high] = [0, count($candidates)];
+        while ($low < $high) {
+            $mid = intdiv($low + $high, 2);
+            if ($candidates[$mid] < $first) {
+                $low = $mid + 1;
+            } else {
+                $high = $mid;
+            }
+        }
+
+        for ($i = $low; $i < count($candidates) && $candidates[$i] <= $lastStart && $candidates[$i] < $until; $i++) {
+            yield $candidates[$i];
+        }
     }
 
     /**

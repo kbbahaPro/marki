@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
@@ -48,6 +49,12 @@ class Booking extends Model
             'ical_sequence' => 'integer',
             'manage_token' => 'encrypted',
         ];
+    }
+
+    protected static function booted(): void
+    {
+        // The organizer is always one of the booking's hosts.
+        static::created(fn (Booking $booking) => $booking->hosts()->attach($booking->host_id, ['is_organizer' => true]));
     }
 
     /**
@@ -119,12 +126,23 @@ class Booking extends Model
     }
 
     /**
-     * Confirmed bookings of a host whose buffered time touches $period.
+     * Bookings a user attends, as organizer or co-host.
+     */
+    public function scopeAttendedBy(Builder $query, int $userId): void
+    {
+        // host_id is checked directly too, so the organizer never depends on the booking_hosts row.
+        $query->where(fn (Builder $q) => $q
+            ->where('host_id', $userId)
+            ->orWhereIn('id', fn ($sub) => $sub->select('booking_id')->from('booking_hosts')->where('user_id', $userId)));
+    }
+
+    /**
+     * Confirmed bookings a host attends whose buffered time touches $period.
      */
     public function scopeBlockingHost(Builder $query, int $hostId, Period $period): void
     {
         $query->confirmed()
-            ->where('host_id', $hostId)
+            ->attendedBy($hostId)
             ->where('blocked_start_at', '<', $period->end)
             ->where('blocked_end_at', '>', $period->start);
     }
@@ -137,6 +155,14 @@ class Booking extends Model
     public function host(): BelongsTo
     {
         return $this->belongsTo(User::class, 'host_id');
+    }
+
+    /**
+     * Everyone hosting this booking, organizer included.
+     */
+    public function hosts(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'booking_hosts')->withPivot('is_organizer');
     }
 
     public function answers(): HasMany

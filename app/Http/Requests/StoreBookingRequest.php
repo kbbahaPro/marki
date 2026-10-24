@@ -26,7 +26,8 @@ class StoreBookingRequest extends FormRequest
             'start' => ['required', 'string', 'date'],
             'timezone' => ['required', 'timezone:all'],
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'email:rfc', 'max:255'],
+            // "filter" also rejects quoted local parts, which could break .ics and mail headers.
+            'email' => ['required', 'string', 'email:rfc,filter', 'max:255'],
             'notes' => ['nullable', 'string', 'max:2000'],
             'guest_phone' => [
                 Rule::requiredIf($eventType->location_type === LocationType::Phone),

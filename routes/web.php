@@ -7,6 +7,11 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Public\BookingConfirmationController;
 use App\Http\Controllers\Public\BookingPageController;
 use App\Http\Controllers\Settings\CalendarController;
+use App\Mail\BookingConfirmedGuest;
+use App\Mail\BookingConfirmedHost;
+use App\Mail\MeetingLinkReady;
+use App\Models\Booking;
+use App\Services\Ics\IcsGenerator;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -46,6 +51,30 @@ Route::middleware(['auth', 'verified', 'admin'])->prefix('team')->name('team.')-
 });
 
 require __DIR__.'/auth.php';
+
+/*
+|--------------------------------------------------------------------------
+| Local email previews
+|--------------------------------------------------------------------------
+|
+| Renders booking emails for the most recent booking. Only registered when
+| APP_ENV=local, so it never exists in production.
+|
+*/
+
+if (app()->environment('local')) {
+    Route::get('/_preview/mail/{mail}', function (string $mail) {
+        $booking = Booking::latest('id')->firstOrFail();
+
+        return match ($mail) {
+            'guest' => new BookingConfirmedGuest($booking, 'preview-token'),
+            'host' => new BookingConfirmedHost($booking),
+            'meeting-link' => new MeetingLinkReady($booking),
+            'ics' => response(app(IcsGenerator::class)->forBooking($booking))->header('Content-Type', 'text/plain; charset=utf-8'),
+            default => abort(404),
+        };
+    })->middleware('auth');
+}
 
 /*
 |--------------------------------------------------------------------------

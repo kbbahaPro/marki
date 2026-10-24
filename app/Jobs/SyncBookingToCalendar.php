@@ -3,11 +3,14 @@
 namespace App\Jobs;
 
 use App\Enums\BookingStatus;
+use App\Enums\LocationType;
 use App\Enums\SyncStatus;
+use App\Mail\MeetingLinkReady;
 use App\Models\Booking;
 use App\Services\Calendar\CalendarProvider;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 use Throwable;
 
@@ -41,6 +44,11 @@ class SyncBookingToCalendar implements ShouldQueue
         }
 
         $calendar->createEvent($booking);
+
+        // The guest's confirmation went out without a Meet link; send it now.
+        if ($booking->location_type === LocationType::GoogleMeet && $booking->meeting_url) {
+            Mail::to($booking->guest_email, $booking->guest_name)->send(new MeetingLinkReady($booking));
+        }
     }
 
     public function failed(Throwable $e): void

@@ -30,7 +30,13 @@ class CreateCalendarEvent
                 'sync_error' => Str::limit($e->getMessage(), 1000),
             ])->save();
 
-            SyncBookingToCalendar::dispatch($event->booking)->delay(now()->addMinute());
+            try {
+                SyncBookingToCalendar::dispatch($event->booking)->delay(now()->addMinute());
+            } catch (Throwable $retryError) {
+                // With the "sync" queue driver the retry runs inline; its failure must
+                // not stop the confirmation emails, which are the next listener.
+                report($retryError);
+            }
         }
     }
 }

@@ -2,6 +2,9 @@
 
 namespace App\Providers;
 
+use App\Events\BookingCreated;
+use App\Listeners\CreateCalendarEvent;
+use App\Listeners\SendBookingConfirmations;
 use App\Services\Calendar\CalendarProvider;
 use App\Services\Calendar\Google\GoogleApi;
 use App\Services\Calendar\Google\GoogleCalendarService;
@@ -9,6 +12,7 @@ use App\Services\Scheduling\AvailabilityService;
 use App\Services\Scheduling\SlotEngine;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 
@@ -39,6 +43,11 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Order matters: the calendar event (and its Meet link) must exist
+        // before the confirmation emails are built.
+        Event::listen(BookingCreated::class, CreateCalendarEvent::class);
+        Event::listen(BookingCreated::class, SendBookingConfirmations::class);
+
         // Public booking endpoints are unauthenticated, so limit them per IP.
         RateLimiter::for('booking-slots', fn (Request $request) => Limit::perMinute(60)->by($request->ip()));
 

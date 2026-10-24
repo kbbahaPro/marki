@@ -19,6 +19,10 @@
             @endif
         </div>
 
-        <div class="card mt-10 p-8 text-center text-ink-2">{{ __('No meetings are available to book with this team right now.') }}</div>
+        @if ($eventTypes->isEmpty())
+            <div class="card mt-10 p-8 text-center text-ink-2">{{ __('No meetings are available to book with this team right now.') }}</div>
+        @else
+            @include('public.partials.event-type-list')
+        @endif
     </div>
 </x-public-layout>

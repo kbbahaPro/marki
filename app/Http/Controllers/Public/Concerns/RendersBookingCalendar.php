@@ -24,7 +24,11 @@ trait RendersBookingCalendar
      */
     protected function calendarConfig(EventType $eventType, string $slotsUrl, ?string $defaultTimezone = null): array
     {
-        $hostTimezone = $eventType->effectiveSchedule()?->timezone ?? $eventType->user->timezone;
+        // Team event types have no single host: start from the first host's zone.
+        $hostTimezone = $eventType->effectiveSchedule()?->timezone
+            ?? $eventType->user?->timezone
+            ?? $eventType->hosts->first()?->timezone
+            ?? config('app.timezone');
 
         return [
             'slotsUrl' => $slotsUrl,

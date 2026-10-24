@@ -33,10 +33,18 @@
         <dl class="divide-y divide-line px-6 sm:px-10">
             <div class="flex items-center gap-4 py-4">
                 <dt class="sr-only">{{ __('What') }}</dt>
-                <x-avatar :user="$booking->host" size="md" decorative />
+                @if ($booking->hosts->count() > 1)
+                    <span class="flex shrink-0 -space-x-3">
+                        @foreach ($booking->hosts->take(3) as $host)
+                            <x-avatar :user="$host" size="md" decorative class="ring-2 ring-surface" />
+                        @endforeach
+                    </span>
+                @else
+                    <x-avatar :user="$booking->host" size="md" decorative />
+                @endif
                 <dd>
                     <span class="font-semibold text-ink">{{ $booking->eventType->title }}</span><br>
-                    <span class="text-sm text-ink-2">{{ __('with') }} {{ $booking->host->name }}@if ($booking->host->headline()) · {{ $booking->host->headline() }}@endif</span>
+                    <span class="text-sm text-ink-2">{{ __('with') }} {{ $booking->hostNames() }}@if ($booking->hosts->count() <= 1 && $booking->host->headline()) · {{ $booking->host->headline() }}@endif</span>
                 </dd>
             </div>
             <div class="flex gap-4 py-4">

@@ -1,6 +1,7 @@
 @php
     use App\Enums\LocationType;
     use App\Enums\QuestionType;
+    use App\Enums\SchedulingType;
 
     $locationIcon = match ($eventType->location_type) {
         LocationType::GoogleMeet => 'video',
@@ -13,15 +14,39 @@
     <div class="card grid overflow-hidden shadow-xl shadow-ink/[0.04] md:grid-cols-[19rem_1fr]" x-data="bookingPage(@js($config))">
         {{-- Event summary --}}
         <aside class="border-b border-line p-6 sm:p-8 md:border-b-0 md:border-r">
-            <a href="{{ route('public.profile', $host->username) }}" class="group flex items-center gap-3">
-                <x-avatar :user="$host" size="lg" decorative loading="eager" />
-                <span class="min-w-0">
-                    <span class="block truncate font-semibold text-ink group-hover:underline">{{ $host->name }}</span>
-                    @if ($host->headline())
-                        <span class="block text-sm text-ink-3">{{ $host->headline() }}</span>
-                    @endif
-                </span>
-            </a>
+            @if ($host)
+                <a href="{{ route('public.profile', $host->username) }}" class="group flex items-center gap-3">
+                    <x-avatar :user="$host" size="lg" decorative loading="eager" />
+                    <span class="min-w-0">
+                        <span class="block truncate font-semibold text-ink group-hover:underline">{{ $host->name }}</span>
+                        @if ($host->headline())
+                            <span class="block text-sm text-ink-3">{{ $host->headline() }}</span>
+                        @endif
+                    </span>
+                </a>
+            @else
+                @php
+                    $hosts = $eventType->hosts;
+                    $fixed = $hosts->filter(fn ($h) => $h->pivot->is_fixed)->pluck('name');
+                    $rotating = $hosts->reject(fn ($h) => $h->pivot->is_fixed)->pluck('name');
+                    $and = ' '.__('and').' ';
+                    $who = match (true) {
+                        // Everyone attends when it is collective or only one host takes turns.
+                        $eventType->scheduling_type === SchedulingType::Collective, $rotating->count() <= 1 => __('With :names', ['names' => $hosts->pluck('name')->join(', ', $and)]),
+                        $fixed->isNotEmpty() => __('With :fixed and one of :rotating', ['fixed' => $fixed->join(', ', $and), 'rotating' => $rotating->join(', ', ' '.__('or').' ')]),
+                        default => __('With one of :rotating', ['rotating' => $rotating->join(', ', ' '.__('or').' ')]),
+                    };
+                @endphp
+                <a href="{{ $eventType->team->publicUrl() }}" class="group block">
+                    <span class="flex -space-x-2">
+                        @foreach ($hosts->take(5) as $teamHost)
+                            <x-avatar :user="$teamHost" size="md" decorative class="ring-2 ring-surface" loading="eager" />
+                        @endforeach
+                    </span>
+                    <span class="mt-3 block font-semibold text-ink group-hover:underline">{{ $eventType->team->name }}</span>
+                    <span class="block text-sm text-ink-3">{{ $who }}</span>
+                </a>
+            @endif
 
             <h1 class="mt-5 text-2xl font-bold tracking-tight text-ink">{{ $eventType->title }}</h1>
 

@@ -99,7 +99,8 @@ class User extends Authenticatable
 
     public function eventTypes(): HasMany
     {
-        return $this->hasMany(EventType::class);
+        // chaperone() sets each event type's user, which publicUrl() reads.
+        return $this->hasMany(EventType::class)->chaperone();
     }
 
     public function bookings(): HasMany

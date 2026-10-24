@@ -141,6 +141,15 @@ Route::get('/team/{team}', [TeamPageController::class, 'show'])->name('public.te
 Route::pattern('username', '[a-z0-9](?:[a-z0-9-]{1,28})[a-z0-9]');
 Route::pattern('slug', '[a-z0-9]+(?:-[a-z0-9]+)*');
 
+// "team" is a reserved username, so these never shadow a person's pages.
+Route::get('/team/{team}/{slug}', [TeamPageController::class, 'book'])->name('public.team.book');
+Route::get('/team/{team}/{slug}/slots', [TeamPageController::class, 'slots'])
+    ->middleware('throttle:booking-slots')
+    ->name('public.team.slots');
+Route::post('/team/{team}/{slug}', [BookingPageController::class, 'store'])
+    ->middleware('throttle:booking-submit')
+    ->name('public.team.book.store');
+
 Route::get('/{username}', [BookingPageController::class, 'profile'])->name('public.profile');
 Route::get('/{username}/{slug}', [BookingPageController::class, 'show'])->name('public.book');
 Route::get('/{username}/{slug}/slots', [BookingPageController::class, 'slots'])

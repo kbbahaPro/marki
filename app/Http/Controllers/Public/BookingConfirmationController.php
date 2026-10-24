@@ -15,7 +15,7 @@ class BookingConfirmationController extends Controller
     public function __invoke(Booking $booking): View
     {
         return view('public.confirmation', [
-            'booking' => $booking->load(['eventType', 'host']),
+            'booking' => $booking->load(['eventType', 'host', 'hosts']),
         ]);
     }
 }

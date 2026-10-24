@@ -56,11 +56,11 @@ class ManageBookingController extends Controller
             return redirect()->route('bookings.manage', $token);
         }
 
-        $eventType = $booking->eventType->load(['user', 'questions']);
+        $eventType = $booking->eventType->load(['user', 'team', 'hosts', 'questions']);
 
         return view('public.book', [
             'eventType' => $eventType,
-            'host' => $eventType->user,
+            'host' => $eventType->user, // null for team event types
             'config' => $this->calendarConfig($eventType, route('bookings.reschedule.slots', $token), $booking->guest_timezone),
             'formAction' => route('bookings.reschedule.store', $token),
             'reschedule' => $booking,
@@ -107,6 +107,6 @@ class ManageBookingController extends Controller
 
         abort_if($booking === null, 404);
 
-        return $booking->load(['eventType', 'host']);
+        return $booking->load(['eventType', 'host', 'hosts']);
     }
 }

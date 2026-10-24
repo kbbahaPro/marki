@@ -17,7 +17,7 @@
             @case($booking->status === BookingStatus::Cancelled)
                 <h1 class="text-2xl font-bold tracking-tight text-ink">{{ __('This booking is cancelled') }}</h1>
                 @if (session('status') === 'cancelled')
-                    <p class="mt-1 text-ink-2">{{ __('We have let :host know. A confirmation is on its way to your inbox.', ['host' => $booking->host->name]) }}</p>
+                    <p class="mt-1 text-ink-2">{{ __('We have let :host know. A confirmation is on its way to your inbox.', ['host' => $booking->hostNames()]) }}</p>
                 @endif
                 @break
             @case($booking->status === BookingStatus::Rescheduled)
@@ -33,7 +33,7 @@
         @endswitch
 
         <dl class="mt-6 space-y-3 border-t border-line pt-6 text-sm">
-            <div class="flex gap-3"><dt class="w-20 shrink-0 text-ink-3">{{ __('What') }}</dt><dd class="font-medium text-ink">{{ $booking->eventType->title }} {{ __('with') }} {{ $booking->host->name }}</dd></div>
+            <div class="flex gap-3"><dt class="w-20 shrink-0 text-ink-3">{{ __('What') }}</dt><dd class="font-medium text-ink">{{ $booking->eventType->title }} {{ __('with') }} {{ $booking->hostNames() }}</dd></div>
             <div class="flex gap-3"><dt class="w-20 shrink-0 text-ink-3">{{ __('When') }}</dt><dd class="text-ink {{ $booking->isChangeable() ? '' : 'line-through text-ink-3' }}">
                 {{ $start->translatedFormat('l, F j, Y') }}<br>
                 {{ $start->format('H:i') }} – {{ $end->format('H:i') }} <span class="text-ink-3">({{ str_replace('_', ' ', $tz) }})</span>
@@ -54,7 +54,7 @@
                     @csrf
                     <h2 class="section-title">{{ __('Cancel this booking') }}</h2>
                     <div>
-                        <x-input-label for="reason" :value="__('Reason (optional, shared with :host)', ['host' => $booking->host->name])" />
+                        <x-input-label for="reason" :value="__('Reason (optional, shared with :host)', ['host' => $booking->hostNames()])" />
                         <textarea id="reason" name="reason" rows="3" maxlength="1000" class="mt-1 block w-full input">{{ old('reason') }}</textarea>
                         <x-input-error class="mt-2" :messages="$errors->get('reason')" />
                     </div>
@@ -62,7 +62,7 @@
                 </form>
             </div>
         @elseif ($booking->status === BookingStatus::Cancelled && $canBookAgain)
-            <a href="{{ route('public.book', [$booking->host->username, $booking->eventType->slug]) }}" class="mt-8 btn-primary">
+            <a href="{{ $booking->eventType->publicUrl() }}" class="mt-8 btn-primary">
                 {{ __('Book a new time') }}
             </a>
         @endif

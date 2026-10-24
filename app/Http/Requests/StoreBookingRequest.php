@@ -6,6 +6,7 @@ use App\Enums\LocationType;
 use App\Enums\QuestionType;
 use App\Models\EventType;
 use App\Models\EventTypeQuestion;
+use App\Models\Team;
 use App\Services\Booking\GuestDetails;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Http\FormRequest;
@@ -57,12 +58,20 @@ class StoreBookingRequest extends FormRequest
     }
 
     /**
-     * The event type named in the URL; inactive or deleted ones are 404s.
+     * The event type named in the URL (a person's or a team's); inactive or deleted ones are 404s.
      */
     public function eventType(): EventType
     {
+        // The store action has no Team parameter, so the route holds the slug unbound.
+        $team = $this->route('team');
+        $teamSlug = $team instanceof Team ? $team->slug : $team;
+
         return once(fn () => EventType::query()
-            ->whereHas('user', fn ($q) => $q->where('username', $this->route('username')))
+            ->when(
+                $teamSlug,
+                fn ($q) => $q->whereHas('team', fn ($q) => $q->where('slug', $teamSlug)),
+                fn ($q) => $q->whereHas('user', fn ($q) => $q->where('username', $this->route('username'))),
+            )
             ->where('slug', $this->route('slug'))
             ->where('is_active', true)
             ->with(['user', 'questions'])

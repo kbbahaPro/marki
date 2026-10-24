@@ -34,7 +34,10 @@ class SendChangeEmails
         $previous = $event->previous->fresh();
 
         Mail::to($booking->guest_email, $booking->guest_name)
-            ->send(new BookingRescheduledGuest($previous, $booking, $event->manageToken));
-        Mail::to($booking->host)->send(new BookingRescheduledHost($previous, $booking));
+            ->send(new BookingRescheduledGuest($previous, $booking, $event->manageToken, $event->by));
+
+        if ($event->by !== 'host') {
+            Mail::to($booking->host)->send(new BookingRescheduledHost($previous, $booking));
+        }
     }
 }

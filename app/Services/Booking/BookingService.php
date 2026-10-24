@@ -82,12 +82,13 @@ class BookingService
      * Move a booking to a new start time. The old row is kept (status
      * "rescheduled") and a new confirmed row with a new manage token replaces it.
      *
+     * @param  'guest'|'host'  $by
      * @return array{0: Booking, 1: string} The new booking and its raw manage token.
      *
      * @throws SlotUnavailableException
      * @throws BookingNotChangeableException
      */
-    public function reschedule(Booking $previous, CarbonImmutable $start, ?CarbonImmutable $now = null): array
+    public function reschedule(Booking $previous, CarbonImmutable $start, ?CarbonImmutable $now = null, string $by = 'guest'): array
     {
         $start = $start->utc();
         $eventType = $previous->eventType;
@@ -134,7 +135,7 @@ class BookingService
             return $booking;
         });
 
-        BookingRescheduled::dispatch($previous->fresh(), $booking, $token);
+        BookingRescheduled::dispatch($previous->fresh(), $booking, $token, $by);
 
         return [$booking, $token];
     }

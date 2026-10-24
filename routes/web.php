@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\TeamController;
 use App\Http\Controllers\AvailabilityController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EventTypeController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Public\BookingConfirmationController;
@@ -19,9 +20,18 @@ Route::get('/', function () {
     return redirect()->route(auth()->check() ? 'dashboard' : 'login');
 });
 
-Route::get('/dashboard', function () {
-    return view('dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
+Route::middleware(['auth', 'verified'])->prefix('dashboard')->group(function () {
+    Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
+
+    Route::prefix('/bookings/{booking}')->name('dashboard.bookings.')->group(function () {
+        Route::get('/', [DashboardController::class, 'show'])->name('show');
+        Route::post('/cancel', [DashboardController::class, 'cancel'])->name('cancel');
+        Route::get('/reschedule', [DashboardController::class, 'editTime'])->name('reschedule');
+        Route::get('/reschedule/slots', [DashboardController::class, 'slots'])->name('reschedule.slots');
+        Route::post('/reschedule', [DashboardController::class, 'reschedule'])->name('reschedule.store');
+        Route::post('/sync', [DashboardController::class, 'retrySync'])->middleware('throttle:10,1')->name('sync');
+    });
+});
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');

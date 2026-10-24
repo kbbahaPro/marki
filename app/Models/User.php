@@ -38,6 +38,23 @@ class User extends Authenticatable
         static::created(fn (User $user) => Schedule::createDefaultFor($user));
     }
 
+    /**
+     * Why this account cannot be deleted right now, if anything stops it.
+     */
+    public function deletionBlocker(): ?string
+    {
+        if ($this->is_admin && ! static::where('is_admin', true)->whereKeyNot($this->id)->exists()) {
+            return __('You are the only administrator. Invite another administrator before deleting your account.');
+        }
+
+        // Bookings are kept as a record for guests and the team.
+        if ($this->bookings()->exists()) {
+            return __('Your account has bookings, which are kept as a record. Accounts with booking history cannot be deleted yet.');
+        }
+
+        return null;
+    }
+
     public function schedules(): HasMany
     {
         return $this->hasMany(Schedule::class);

@@ -14,9 +14,13 @@ class BookingRescheduled
 {
     use Dispatchable, SerializesModels;
 
+    /**
+     * @param  'guest'|'host'  $by
+     */
     public function __construct(
         public Booking $previous,
         public Booking $booking,
         public string $manageToken,
+        public string $by = 'guest',
     ) {}
 }

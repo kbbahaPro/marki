@@ -8,7 +8,7 @@ Throughout, replace:
 |-------------|---------|
 | `book.example.com` | the (sub)domain the app will live on |
 | `u123456789` | your Hostinger SSH/FTP username (hPanel → **Advanced → SSH Access**) |
-| `~/apps/scheduler` | where the application code lives, **outside** the web root |
+| `~/apps/marki` | where the application code lives, **outside** the web root |
 | `DOCROOT` | the web root hPanel created for the domain, usually `~/domains/book.example.com/public_html` |
 
 > Time needed: about 45 minutes, plus Google's review time if you want to remove the "unverified app" warning (see §8).
@@ -58,13 +58,13 @@ Keep the application **outside** the web root so `.env`, `vendor/` and `storage/
 
 ```bash
 mkdir -p ~/apps
-git clone https://github.com/YOUR-ORG/scheduler.git ~/apps/scheduler
-cd ~/apps/scheduler
+git clone https://github.com/YOUR-ORG/marki.git ~/apps/marki
+cd ~/apps/marki
 ```
 
 For a private repository, add a deploy key: generate one with `ssh-keygen -t ed25519` on the server and add `~/.ssh/id_ed25519.pub` to the repository's deploy keys.
 
-**Option B, ZIP upload.** On your computer run `git archive -o scheduler.zip HEAD`, upload it with hPanel's **File Manager** into `~/apps/`, then extract it to `~/apps/scheduler`.
+**Option B, ZIP upload.** On your computer run `git archive -o marki.zip HEAD`, upload it with hPanel's **File Manager** into `~/apps/`, then extract it to `~/apps/marki`.
 
 The front-end is **pre-built and committed** (`public/build/`), so the server never needs Node.js. If you change any CSS/JS or Blade classes, run `npm run build` locally and commit the result before deploying.
 
@@ -75,7 +75,7 @@ The front-end is **pre-built and committed** (`public/build/`), so the server ne
 Composer is pre-installed on Hostinger (`composer` or `composer2`):
 
 ```bash
-cd ~/apps/scheduler
+cd ~/apps/marki
 composer install --no-dev --optimize-autoloader --no-interaction
 ```
 
@@ -91,7 +91,7 @@ The Google API client is trimmed to the Calendar and OAuth2 services during inst
 
 ## 5. Serve `public/` as the web root
 
-The domain must point at `~/apps/scheduler/public`, never at the project root.
+The domain must point at `~/apps/marki/public`, never at the project root.
 
 ### Option A: symlink (recommended)
 
@@ -100,8 +100,8 @@ Replace the web root folder that hPanel created with a symlink to `public/`:
 ```bash
 cd ~/domains/book.example.com
 mv public_html public_html.bak                # keep the original, just in case
-ln -s ~/apps/scheduler/public public_html
-ls -la                                        # public_html -> /home/u123456789/apps/scheduler/public
+ln -s ~/apps/marki/public public_html
+ls -la                                        # public_html -> /home/u123456789/apps/marki/public
 ```
 
 Visit `https://book.example.com/up`; it should show Laravel's health page. If it does, delete `public_html.bak`.
@@ -112,18 +112,18 @@ Visit `https://book.example.com/up`; it should show Laravel's health page. If it
 
 Some accounts block symlinked web roots. In that case:
 
-1. Copy the *contents* of `~/apps/scheduler/public/` (including the hidden `.htaccess`) into `DOCROOT`.
+1. Copy the *contents* of `~/apps/marki/public/` (including the hidden `.htaccess`) into `DOCROOT`.
 2. Edit `DOCROOT/index.php` so it points at the app and tells Laravel where its public folder is now:
 
    ```php
    // Maintenance mode
-   if (file_exists($maintenance = __DIR__.'/../../apps/scheduler/storage/framework/maintenance.php')) {
+   if (file_exists($maintenance = __DIR__.'/../../apps/marki/storage/framework/maintenance.php')) {
        require $maintenance;
    }
 
-   require __DIR__.'/../../apps/scheduler/vendor/autoload.php';
+   require __DIR__.'/../../apps/marki/vendor/autoload.php';
 
-   $app = require_once __DIR__.'/../../apps/scheduler/bootstrap/app.php';
+   $app = require_once __DIR__.'/../../apps/marki/bootstrap/app.php';
    $app->usePublicPath(__DIR__);
 
    $app->handleRequest(Request::capture());
@@ -139,7 +139,7 @@ Option A avoids step 3, which is why it is preferred.
 ## 6. Configure `.env`
 
 ```bash
-cd ~/apps/scheduler
+cd ~/apps/marki
 cp .env.example .env
 php artisan key:generate
 chmod 600 .env
@@ -149,7 +149,7 @@ nano .env
 Set at least the following (everything else can stay as in `.env.example`):
 
 ```dotenv
-APP_NAME="Acme Scheduling"           # shown in the header, emails and calendar invites
+APP_NAME=Marki                       # shown in the header, emails and calendar invites
 APP_ENV=production
 APP_DEBUG=false                      # never true in production: it leaks secrets on errors
 APP_URL=https://book.example.com     # exact scheme and host, no trailing slash
@@ -161,8 +161,8 @@ LOG_LEVEL=warning
 DB_CONNECTION=mysql
 DB_HOST=localhost
 DB_PORT=3306
-DB_DATABASE=u123456789_scheduler
-DB_USERNAME=u123456789_scheduler
+DB_DATABASE=u123456789_marki
+DB_USERNAME=u123456789_marki
 DB_PASSWORD="your-database-password"
 
 SESSION_DRIVER=database
@@ -185,8 +185,8 @@ GOOGLE_CLIENT_ID=
 GOOGLE_CLIENT_SECRET=
 GOOGLE_REDIRECT_URI="${APP_URL}/settings/calendar/google/callback"
 
-# Branding and defaults (optional)
-BRAND_LOGO_URL=                      # absolute URL to a logo image; leave empty for the built-in mark
+# Branding (optional): the defaults are the Marki identity. To rebrand, see README → Branding.
+BRAND_WORDMARK=marki
 BRAND_SUPPORT_EMAIL=
 DEFAULT_HOST_TIMEZONE=Europe/Paris   # pre-selected for new team members
 ```
@@ -200,7 +200,7 @@ The application always stores and computes times in UTC (`config/app.php`); do n
 ## 7. Database tables, storage link, first admin, caches
 
 ```bash
-cd ~/apps/scheduler
+cd ~/apps/marki
 
 php artisan migrate --force          # create the tables
 php artisan storage:link             # serves profile photos from public/storage
@@ -211,10 +211,10 @@ php artisan optimize                 # cache config, routes, events and views
 If `storage:link` fails because PHP's `symlink()` is disabled, create the link from the shell instead:
 
 ```bash
-ln -s ~/apps/scheduler/storage/app/public ~/apps/scheduler/public/storage
+ln -s ~/apps/marki/storage/app/public ~/apps/marki/public/storage
 ```
 
-(With option B from §5, link `DOCROOT/storage` to `~/apps/scheduler/storage/app/public` instead.)
+(With option B from §5, link `DOCROOT/storage` to `~/apps/marki/storage/app/public` instead.)
 
 **Permissions.** Hostinger runs PHP as your own user, so the default permissions work. If you see "Permission denied" errors in the log:
 
@@ -232,7 +232,7 @@ Each host connects their own Google Calendar from **Calendar** in the app. You s
 
 ### 8.1 Create the OAuth client
 
-1. Go to <https://console.cloud.google.com/> and create a project (for example "Scheduler").
+1. Go to <https://console.cloud.google.com/> and create a project (for example "Marki").
 2. **APIs & Services → Library**: enable **Google Calendar API**.
 3. **Google Auth Platform → Branding** (older consoles: *OAuth consent screen*):
    - App name, support email, and your logo if you like.
@@ -275,7 +275,7 @@ Under **Audience → Publish app**, move it to **In production**. Calendar scope
 4. Send a test message (this bypasses the queue):
 
    ```bash
-   php artisan tinker --execute="Mail::raw('SMTP works.', fn (\$m) => \$m->to('you@example.com')->subject('Scheduler SMTP test'));"
+   php artisan tinker --execute="Mail::raw('SMTP works.', fn (\$m) => \$m->to('you@example.com')->subject('Marki SMTP test'));"
    ```
 
 Booking emails themselves are **queued** and sent by the cron job (§10), normally within a minute.
@@ -289,7 +289,7 @@ One cron entry drives everything: due reminders, the email/calendar queue and ho
 hPanel → **Advanced → Cron Jobs** → **Custom** command, run **every minute** (`* * * * *`):
 
 ```bash
-/opt/alt/php84/usr/bin/php /home/u123456789/apps/scheduler/artisan schedule:run >> /dev/null 2>&1
+/opt/alt/php84/usr/bin/php /home/u123456789/apps/marki/artisan schedule:run >> /dev/null 2>&1
 ```
 
 Use the PHP path that reports 8.4 (§1) and your real home directory (`echo $HOME` over SSH).
@@ -328,7 +328,7 @@ A quick end-to-end check is to book a test meeting on your own page: the confirm
 ## 12. Updating to a new version
 
 ```bash
-cd ~/apps/scheduler
+cd ~/apps/marki
 php artisan down --retry=60          # optional: show a maintenance page during the update
 git pull                             # or upload and extract the new ZIP over the old files
 composer install --no-dev --optimize-autoloader --no-interaction
@@ -349,8 +349,8 @@ What must be backed up:
 | What | Where | Why |
 |------|-------|-----|
 | Database | MySQL | bookings, users, settings, encrypted Google tokens |
-| `.env` | `~/apps/scheduler/.env` | **`APP_KEY`** (needed to decrypt the above) and credentials |
-| Profile photos | `~/apps/scheduler/storage/app/public/avatars` | uploaded images |
+| `.env` | `~/apps/marki/.env` | **`APP_KEY`** (needed to decrypt the above) and credentials |
+| Profile photos | `~/apps/marki/storage/app/public/avatars` | uploaded images |
 
 Hostinger's automatic backups cover files and databases; also download a database export from hPanel → **Databases → phpMyAdmin → Export** before major updates.
 

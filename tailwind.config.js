@@ -20,6 +20,7 @@ export default {
         extend: {
             fontFamily: {
                 sans: ['"Plus Jakarta Sans Variable"', ...defaultTheme.fontFamily.sans],
+                display: ['"Outfit Variable"', '"Plus Jakarta Sans Variable"', ...defaultTheme.fontFamily.sans],
             },
             colors: {
                 canvas: token('canvas'),
@@ -35,6 +36,7 @@ export default {
                     ink: token('primary-ink'),
                     soft: token('primary-soft'),
                 },
+                marker: { DEFAULT: token('marker'), ink: token('marker-ink') },
                 success: { DEFAULT: token('success'), soft: token('success-soft') },
                 warning: { DEFAULT: token('warning'), soft: token('warning-soft') },
                 danger: { DEFAULT: token('danger'), soft: token('danger-soft') },

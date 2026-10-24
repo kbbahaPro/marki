@@ -1,10 +1,13 @@
-# Scheduler
+<p align="center"><img src="public/brand/mark-128.png" width="72" alt="Marki"></p>
 
-A self-hosted scheduling app for teams, in the spirit of Calendly: each team member shares a link, guests pick a free time, and the meeting lands in everyone's calendar with a Google Meet link.
+<h1 align="center">Marki</h1>
+<p align="center"><strong>Mark that time.</strong></p>
+
+Marki is a self-hosted scheduling app for teams, in the spirit of Calendly: each team member shares a link, guests pick a free time, and the meeting lands in everyone's calendar with a Google Meet link.
 
 It is built to run on **inexpensive shared hosting**: plain PHP and MySQL, no Docker, no Node.js at runtime, no Redis and no long-running workers. One cron job does all the background work.
 
-> The product name, logo and colours are configuration, not code. Set `APP_NAME` in `.env` and it appears everywhere.
+> Marki is the default identity. The name, logo, colours and favicon are configuration, not code, so you can run it under your own brand (see [Branding](#branding)).
 
 ---
 
@@ -66,8 +69,8 @@ It is built to run on **inexpensive shared hosting**: plain PHP and MySQL, no Do
 ### Set up
 
 ```bash
-git clone https://github.com/YOUR-ORG/scheduler.git
-cd scheduler
+git clone https://github.com/YOUR-ORG/marki.git
+cd marki
 
 composer install
 cp .env.example .env
@@ -117,8 +120,8 @@ Besides the usual Laravel settings (`APP_*`, `DB_*`, `MAIL_*`), these are specif
 
 | Variable | Default | Purpose |
 |----------|---------|---------|
-| `APP_NAME` | `Scheduler` | Product name in the header, emails and calendar invites |
-| `BRAND_LOGO_URL` | (empty) | Absolute URL of a logo; replaces the built-in mark |
+| `APP_NAME` | `Marki` | Product name in page titles, emails and calendar invites |
+| `BRAND_*` | Marki identity | Wordmark, tagline, colours, logo and favicon; see [Branding](#branding) |
 | `BRAND_SUPPORT_EMAIL` | (empty) | Support contact |
 | `DEFAULT_HOST_TIMEZONE` | `UTC` | Pre-selected time zone for new team members |
 | `INVITATION_EXPIRE_DAYS` | `7` | How long team invitations stay valid |
@@ -172,6 +175,24 @@ vendor/bin/pint
 ## Deployment
 
 [**DEPLOYMENT.md**](DEPLOYMENT.md) is a step-by-step guide for Hostinger shared hosting. It covers PHP settings, uploading, Composer, pointing the domain at `public/`, the production `.env`, migrations, Google Cloud OAuth (including publishing and verification), SMTP with SPF/DKIM, the cron job, updates, backups and troubleshooting. The same steps apply to most cPanel-style hosts.
+
+## Branding
+
+Out of the box the app is **Marki**: a bookmark (the time slot) holding a calendar dot grid with one dot marked in orange (the chosen time). To run it under your own brand, set these in `.env`; no code changes are needed:
+
+| Variable | Marki default | What it changes |
+|----------|---------------|-----------------|
+| `APP_NAME` | `Marki` | Page titles, emails, calendar invites |
+| `BRAND_WORDMARK` | `marki` | Text beside the mark (empty uses `APP_NAME`) |
+| `BRAND_TAGLINE` | `Mark that time.` | Sign-in page and email footer (empty hides it) |
+| `BRAND_PRIMARY` | `#1D5FAF` | Buttons, links, selected states |
+| `BRAND_MARKER` | `#F4A93C` | The chosen thing: selected date, your time, next meeting |
+| `BRAND_LOGO_URL` | (empty) | Your logo image, replacing the mark and wordmark (pages and emails) |
+| `BRAND_FAVICON_URL` | (empty) | Your favicon, replacing the built-in ones |
+
+Colours are checked for accessibility at runtime (`App\Support\BrandPalette`). If a colour is too light for white button text or readable links, it is darkened along the same hue (or lightened in dark mode) until it meets WCAG AA. A pale brand colour still works, just a shade deeper.
+
+The built-in favicons and email logo are generated from the mark by `php resources/brand/build-icons.php [primary] [marker]`.
 
 ## Design
 

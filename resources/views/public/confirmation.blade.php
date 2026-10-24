@@ -15,7 +15,7 @@
             <div class="motif -bottom-24 -left-20 h-40 w-80 bg-white/10" aria-hidden="true"></div>
             <div class="motif -right-24 -top-16 h-32 w-72 bg-white/10" aria-hidden="true"></div>
 
-            <div class="relative mx-auto flex h-14 w-24 items-center justify-center rounded-full {{ $confirmed ? 'bg-white text-primary' : 'bg-surface text-ink-3' }}">
+            <div class="relative mx-auto flex h-14 w-24 items-center justify-center rounded-full {{ $confirmed ? 'marked' : 'bg-surface text-ink-3' }}">
                 <x-icon :name="$confirmed ? 'check' : 'x'" class="h-7 w-7" />
             </div>
             <h1 class="relative mt-5 text-2xl font-bold tracking-tight">

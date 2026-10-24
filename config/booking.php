@@ -13,7 +13,16 @@ return [
     */
 
     'brand' => [
+        // Text beside the mark; falls back to APP_NAME.
+        'wordmark' => env('BRAND_WORDMARK'),
+        'tagline' => env('BRAND_TAGLINE', 'Mark that time.'),
+        // Hex colours. "primary" drives actions and links; "marker" highlights
+        // the chosen thing (selected date, your time). Both are contrast-checked.
+        'primary' => env('BRAND_PRIMARY', '#1D5FAF'),
+        'marker' => env('BRAND_MARKER', '#F4A93C'),
+        // Optional replacements for the built-in Marki mark (absolute URLs).
         'logo_url' => env('BRAND_LOGO_URL'),
+        'favicon_url' => env('BRAND_FAVICON_URL'),
         'support_email' => env('BRAND_SUPPORT_EMAIL'),
     ],
 

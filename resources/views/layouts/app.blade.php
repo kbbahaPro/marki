@@ -4,10 +4,10 @@
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="csrf-token" content="{{ csrf_token() }}">
-        <meta name="theme-color" content="#f8fafc" media="(prefers-color-scheme: light)">
-        <meta name="theme-color" content="#090d18" media="(prefers-color-scheme: dark)">
 
         <title>{{ isset($title) ? $title.' · ' : '' }}{{ config('app.name') }}</title>
+
+        <x-brand-head />
 
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>

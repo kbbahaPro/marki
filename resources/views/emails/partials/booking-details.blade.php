@@ -12,7 +12,7 @@
         <td style="padding:4px 12px 12px 0;color:#6b7280;vertical-align:top;">{{ __('Where') }}</td>
         <td style="padding:4px 0 12px;">
             @if ($where['url'])
-                <a href="{{ $where['url'] }}" style="color:#2563eb;">{{ $where['url'] }}</a>
+                <a href="{{ $where['url'] }}" style="color:{{ $brandPrimary }};">{{ $where['url'] }}</a>
             @else
                 {{ $where['text'] }}
             @endif

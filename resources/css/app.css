@@ -1,4 +1,5 @@
 @import '@fontsource-variable/plus-jakarta-sans';
+@import '@fontsource-variable/outfit';
 
 @tailwind base;
 @tailwind components;
@@ -9,14 +10,16 @@
 | Design tokens
 |--------------------------------------------------------------------------
 |
-| One accent (calendar blue) on calm neutral ground. Green, amber and red
-| only ever carry meaning (confirmed, attention, error). Values are RGB
-| triplets so Tailwind opacity modifiers keep working. Contrast pairs were
-| chosen for WCAG AA (4.5:1 for text) in both themes.
+| Marki blue for actions and the Marki orange "marker" for the chosen
+| thing, on calm neutral ground. These are the defaults; BRAND_PRIMARY and
+| BRAND_MARKER override them at runtime (App\Support\BrandPalette, which
+| also keeps the contrast safe). Green, amber and red only ever carry
+| meaning (confirmed, attention, error). Values are RGB triplets so
+| Tailwind opacity modifiers keep working.
 |
-| The visual motif is the time slot: a pill. It shapes buttons, time
-| choices, badges, tabs and the active navigation item, and appears once at
-| very large scale on the sign-in and public pages.
+| Shapes: the time slot is a pill (buttons, time choices, badges, tabs);
+| the brand mark (a bookmark with a dot grid, one dot marked) appears at
+| very large scale on the sign-in page.
 |
 */
 
@@ -27,13 +30,15 @@
         --surface: 255 255 255;
         --surface-2: 241 245 249;
         --line: 226 232 240;
-        --ink: 15 23 42;
+        --ink: 18 35 61;
         --ink-2: 71 85 105;
         --ink-3: 100 116 139;
-        --primary: 37 99 235;
-        --primary-hover: 29 78 216;
-        --primary-ink: 29 78 216;
-        --primary-soft: 239 246 255;
+        --primary: 29 95 175;
+        --primary-hover: 25 81 149;
+        --primary-ink: 29 95 175;
+        --primary-soft: 237 242 249;
+        --marker: 244 169 60;
+        --marker-ink: 18 35 61;
         --success: 4 120 87;
         --success-soft: 236 253 245;
         --warning: 180 83 9;
@@ -52,10 +57,12 @@
             --ink: 226 232 240;
             --ink-2: 160 174 192;
             --ink-3: 129 145 168;
-            --primary: 37 99 235;
-            --primary-hover: 59 130 246;
-            --primary-ink: 125 170 250;
-            --primary-soft: 23 37 84;
+            --primary: 29 95 175;
+            --primary-hover: 56 114 185;
+            --primary-ink: 93 141 197;
+            --primary-soft: 15 36 66;
+            --marker: 244 169 60;
+            --marker-ink: 18 35 61;
             --success: 52 211 153;
             --success-soft: 6 46 37;
             --warning: 251 191 36;
@@ -97,7 +104,17 @@
     }
 
     .page-title {
-        @apply text-2xl font-semibold tracking-tight text-ink;
+        @apply font-display text-2xl font-semibold tracking-tight text-ink;
+    }
+
+    /* The "marki" wordmark: Outfit, tight, like the logo */
+    .wordmark {
+        @apply font-display font-bold tracking-[-0.03em] text-ink;
+    }
+
+    /* The chosen thing: selected date, your time, the next meeting */
+    .marked {
+        @apply bg-marker font-bold text-marker-ink;
     }
 
     .section-title {

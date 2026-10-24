@@ -9,7 +9,18 @@
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f3f4f6;padding:24px 12px;">
         <tr>
             <td align="center">
-                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:#ffffff;border-radius:8px;">
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;">
+                    <tr>
+                        <td style="padding:0 4px 16px;">
+                            {{-- Email clients block SVG, so the mark is a PNG. --}}
+                            <img src="{{ config('booking.brand.logo_url') ?: asset('brand/mark-128.png') }}" alt="" height="28" style="vertical-align:middle;border:0;height:28px;width:auto;">
+                            @unless (config('booking.brand.logo_url'))
+                                <span style="vertical-align:middle;margin-left:6px;font-size:20px;font-weight:700;letter-spacing:-0.5px;color:#12233d;">{{ config('booking.brand.wordmark') ?: config('app.name') }}</span>
+                            @endunless
+                        </td>
+                    </tr>
+                </table>
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:#ffffff;border-radius:12px;">
                     <tr>
                         <td style="padding:32px 28px;font-size:15px;line-height:1.6;">
                             @yield('content')
@@ -17,10 +28,7 @@
                     </tr>
                 </table>
                 <p style="margin:16px 0 0;font-size:12px;color:#9ca3af;">
-                    @if (config('booking.brand.logo_url'))
-                        <img src="{{ config('booking.brand.logo_url') }}" alt="" height="16" style="vertical-align:middle;border:0;">
-                    @endif
-                    {{ config('app.name') }}
+                    {{ config('app.name') }}@if (config('booking.brand.tagline')) · {{ config('booking.brand.tagline') }}@endif
                 </p>
             </td>
         </tr>

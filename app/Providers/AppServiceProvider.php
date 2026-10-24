@@ -15,10 +15,12 @@ use App\Services\Calendar\Google\GoogleApi;
 use App\Services\Calendar\Google\GoogleCalendarService;
 use App\Services\Scheduling\AvailabilityService;
 use App\Services\Scheduling\SlotEngine;
+use App\Support\BrandPalette;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -57,6 +59,9 @@ class AppServiceProvider extends ServiceProvider
         Event::listen([BookingCancelled::class, BookingRescheduled::class], SendChangeEmails::class);
 
         Event::listen([BookingCreated::class, BookingRescheduled::class, BookingCancelled::class], ScheduleReminders::class);
+
+        // Emails use inline styles, so they get the (contrast-safe) brand colour as a value.
+        View::composer('emails.*', fn ($view) => $view->with('brandPrimary', BrandPalette::fromConfig()->primaryHex()));
 
         // Public booking endpoints are unauthenticated, so limit them per IP.
         RateLimiter::for('booking-slots', fn (Request $request) => Limit::perMinute(60)->by($request->ip()));

@@ -2,8 +2,8 @@
     "$schema": "https://getcomposer.org/schema.json",
     "name": "laravel/laravel",
     "type": "project",
-    "description": "The skeleton application for the Laravel framework.",
-    "keywords": ["laravel", "framework"],
+    "description": "Marki: self-hosted team scheduling that runs on shared hosting. Mark that time.",
+    "keywords": ["scheduling", "booking", "calendar", "laravel", "self-hosted"],
     "license": "MIT",
     "require": {
         "php": "^8.4.1",

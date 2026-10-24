@@ -33,7 +33,7 @@
 
             <div x-show="selected" x-cloak class="mt-6 rounded-2xl bg-primary-soft p-4 text-primary-ink">
                 <div class="text-xs font-semibold uppercase tracking-wider opacity-80">{{ __('Your time') }}</div>
-                <div class="mt-1 flex items-start gap-2 font-semibold"><x-icon name="calendar-check" class="mt-0.5 h-4 w-4" /><span x-text="selected ? formatLong(selected) : ''"></span></div>
+                <div class="mt-1 flex items-start gap-2 font-semibold"><span class="mt-1 h-3 w-3 shrink-0 rounded-full bg-marker" aria-hidden="true"></span><span x-text="selected ? formatLong(selected) : ''"></span></div>
             </div>
 
             @if ($reschedule)
@@ -76,7 +76,7 @@
                                     <button type="button" x-show="cell.date" @click="selectDate(cell.date)" :disabled="! days[cell.date]"
                                             class="relative flex h-11 w-11 items-center justify-center rounded-full text-sm tabular-nums transition-colors"
                                             :class="cell.date === selectedDate
-                                                ? 'bg-primary font-bold text-white'
+                                                ? 'marked'
                                                 : (days[cell.date] ? 'bg-primary-soft font-semibold text-primary-ink hover:bg-primary hover:text-white' : 'cursor-default text-ink-3/60')"
                                             :aria-pressed="cell.date === selectedDate"
                                             x-text="cell.day"></button>

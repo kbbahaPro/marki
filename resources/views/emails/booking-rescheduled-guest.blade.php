@@ -16,7 +16,7 @@
 
     @if ($where['url'])
         <p style="margin:0 0 20px;">
-            <a href="{{ $where['url'] }}" style="display:inline-block;background:#2563eb;color:#ffffff;text-decoration:none;padding:12px 22px;border-radius:999px;font-weight:600;">{{ __('Join the meeting') }}</a>
+            <a href="{{ $where['url'] }}" style="display:inline-block;background:{{ $brandPrimary }};color:#ffffff;text-decoration:none;padding:12px 22px;border-radius:999px;font-weight:600;">{{ __('Join the meeting') }}</a>
         </p>
     @endif
 

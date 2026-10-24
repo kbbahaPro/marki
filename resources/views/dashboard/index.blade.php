@@ -120,7 +120,7 @@
                         @php($nextStart = $next->start_at->setTimezone($tz))
                         <section class="card relative overflow-hidden p-5" aria-labelledby="next-heading">
                             <div class="motif -right-16 -top-10 h-28 w-56 opacity-10" aria-hidden="true"></div>
-                            <h2 id="next-heading" class="text-xs font-semibold uppercase tracking-wider text-ink-3">{{ __('Next up') }}</h2>
+                            <h2 id="next-heading" class="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-ink-3"><span class="h-2.5 w-2.5 rounded-full bg-marker" aria-hidden="true"></span>{{ __('Next up') }}</h2>
                             <p class="mt-3 text-3xl font-bold tracking-tight text-ink tabular-nums">{{ $nextStart->format('H:i') }}</p>
                             <p class="text-sm text-ink-2">{{ $nextStart->isToday() ? __('Today') : $nextStart->translatedFormat('l, F j') }} · {{ $next->start_at->diffForHumans() }}</p>
                             <p class="mt-4 font-semibold text-ink">{{ $next->guest_name }}</p>

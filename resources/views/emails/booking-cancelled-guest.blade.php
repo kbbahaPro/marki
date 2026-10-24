@@ -19,7 +19,7 @@
 
     @if ($bookAgainUrl)
         <p style="margin:20px 0 0;">
-            <a href="{{ $bookAgainUrl }}" style="display:inline-block;background:#2563eb;color:#ffffff;text-decoration:none;padding:12px 22px;border-radius:999px;font-weight:600;">{{ __('Book a new time') }}</a>
+            <a href="{{ $bookAgainUrl }}" style="display:inline-block;background:{{ $brandPrimary }};color:#ffffff;text-decoration:none;padding:12px 22px;border-radius:999px;font-weight:600;">{{ __('Book a new time') }}</a>
         </p>
     @endif
 @endsection

@@ -206,7 +206,7 @@ The built-in favicons and email logo are generated from the mark by `php resourc
 - Public endpoints are rate-limited and CSRF-protected, and the booking form has a spam honeypot. All user input is escaped in pages, emails and calendar files.
 - Uploaded photos are re-encoded server-side, which strips metadata such as GPS location and rejects anything that is not an image.
 
-If you find a vulnerability, please report it privately to the maintainers rather than opening a public issue.
+If you find a vulnerability, please report it privately rather than opening a public issue. See [SECURITY.md](SECURITY.md).
 
 ---
 

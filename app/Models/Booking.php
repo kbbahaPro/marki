@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\BookingStatus;
 use App\Enums\LocationType;
+use App\Enums\SyncStatus;
 use App\Services\Scheduling\Period;
 use Database\Factories\BookingFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -41,6 +42,7 @@ class Booking extends Model
             'cancelled_at' => 'immutable_datetime',
             'status' => BookingStatus::class,
             'location_type' => LocationType::class,
+            'sync_status' => SyncStatus::class,
         ];
     }
 

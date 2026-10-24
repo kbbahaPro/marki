@@ -6,6 +6,7 @@ use App\Http\Controllers\EventTypeController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Public\BookingConfirmationController;
 use App\Http\Controllers\Public\BookingPageController;
+use App\Http\Controllers\Settings\CalendarController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -27,6 +28,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::put('/availability', [AvailabilityController::class, 'update'])->name('availability.update');
     Route::post('/availability/overrides', [AvailabilityController::class, 'storeOverride'])->name('availability.overrides.store');
     Route::delete('/availability/overrides/{date}', [AvailabilityController::class, 'destroyOverride'])->name('availability.overrides.destroy');
+
+    Route::get('/settings/calendar', [CalendarController::class, 'show'])->name('settings.calendar');
+    Route::post('/settings/calendar/google', [CalendarController::class, 'connect'])->name('settings.calendar.connect');
+    Route::get('/settings/calendar/google/callback', [CalendarController::class, 'callback'])->name('settings.calendar.callback');
+    Route::delete('/settings/calendar/google', [CalendarController::class, 'disconnect'])->name('settings.calendar.disconnect');
 
     Route::resource('event-types', EventTypeController::class)
         ->except('show')

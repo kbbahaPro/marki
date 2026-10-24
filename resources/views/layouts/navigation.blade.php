@@ -21,6 +21,12 @@
                     <x-nav-link :href="route('availability.edit')" :active="request()->routeIs('availability.*')">
                         {{ __('Availability') }}
                     </x-nav-link>
+                    <x-nav-link :href="route('settings.calendar')" :active="request()->routeIs('settings.calendar*')">
+                        {{ __('Calendar') }}
+                        @if (Auth::user()->googleConnection && ! Auth::user()->googleConnection->isActive())
+                            <span class="ms-1 inline-block h-2 w-2 rounded-full bg-red-500" title="{{ __('Needs reconnecting') }}"></span>
+                        @endif
+                    </x-nav-link>
                     @if (Auth::user()->is_admin)
                         <x-nav-link :href="route('team.index')" :active="request()->routeIs('team.*')">
                             {{ __('Team') }}
@@ -86,6 +92,9 @@
             </x-responsive-nav-link>
             <x-responsive-nav-link :href="route('availability.edit')" :active="request()->routeIs('availability.*')">
                 {{ __('Availability') }}
+            </x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('settings.calendar')" :active="request()->routeIs('settings.calendar*')">
+                {{ __('Calendar') }}
             </x-responsive-nav-link>
             @if (Auth::user()->is_admin)
                 <x-responsive-nav-link :href="route('team.index')" :active="request()->routeIs('team.*')">

@@ -2,6 +2,9 @@
 
 namespace App\Providers;
 
+use App\Services\Calendar\CalendarProvider;
+use App\Services\Calendar\Google\GoogleApi;
+use App\Services\Calendar\Google\GoogleCalendarService;
 use App\Services\Scheduling\AvailabilityService;
 use App\Services\Scheduling\SlotEngine;
 use Illuminate\Cache\RateLimiting\Limit;
@@ -21,6 +24,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
+        $this->app->bind(GoogleApi::class, fn () => new GoogleApi(config('services.google')));
+        $this->app->bind(CalendarProvider::class, GoogleCalendarService::class);
+        $this->app->tag([GoogleCalendarService::class], self::BUSY_TIME_SOURCES);
+
         $this->app->bind(AvailabilityService::class, fn ($app) => new AvailabilityService(
             $app->make(SlotEngine::class),
             $app->tagged(self::BUSY_TIME_SOURCES),

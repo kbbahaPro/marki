@@ -85,7 +85,14 @@
                         <option value="{{ $type->value }}">{{ $type->label() }}</option>
                     @endforeach
                 </select>
-                <p class="mt-1 text-xs text-gray-500" x-show="locationType === 'google_meet'">{{ __('A Meet link is created when your Google Calendar is connected.') }}</p>
+                @if (auth()->user()->googleConnection?->isActive())
+                    <p class="mt-1 text-xs text-gray-500" x-show="locationType === 'google_meet'">{{ __('A Meet link is created for each booking.') }}</p>
+                @else
+                    <p class="mt-1 text-xs text-amber-700" x-show="locationType === 'google_meet'">
+                        {{ __('Meet links need a connected Google Calendar.') }}
+                        <a href="{{ route('settings.calendar') }}" class="underline">{{ __('Connect it') }}</a>
+                    </p>
+                @endif
                 <p class="mt-1 text-xs text-gray-500" x-show="locationType === 'phone'">{{ __('Guests will be asked for their phone number.') }}</p>
                 <div x-show="locationType === 'custom'" class="mt-2">
                     <x-text-input id="location_value" name="location_value" type="text" class="block w-full" :value="old('location_value', $eventType->location_value)" :placeholder="__('Address, meeting link or dial-in details')" x-bind:disabled="locationType !== 'custom'" />

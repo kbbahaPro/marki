@@ -57,4 +57,9 @@ class User extends Authenticatable
     {
         return $this->hasMany(Booking::class, 'host_id');
     }
+
+    public function googleConnection(): HasOne
+    {
+        return $this->hasOne(CalendarConnection::class)->where('provider', CalendarConnection::GOOGLE);
+    }
 }

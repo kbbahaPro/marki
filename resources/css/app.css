@@ -1,7 +1,196 @@
+@import '@fontsource-variable/plus-jakarta-sans';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-[x-cloak] {
-    display: none !important;
+/*
+|--------------------------------------------------------------------------
+| Design tokens
+|--------------------------------------------------------------------------
+|
+| One accent (calendar blue) on calm neutral ground. Green, amber and red
+| only ever carry meaning (confirmed, attention, error). Values are RGB
+| triplets so Tailwind opacity modifiers keep working. Contrast pairs were
+| chosen for WCAG AA (4.5:1 for text) in both themes.
+|
+| The visual motif is the time slot: a pill. It shapes buttons, time
+| choices, badges, tabs and the active navigation item, and appears once at
+| very large scale on the sign-in and public pages.
+|
+*/
+
+@layer base {
+    :root {
+        color-scheme: light;
+        --canvas: 248 250 252;
+        --surface: 255 255 255;
+        --surface-2: 241 245 249;
+        --line: 226 232 240;
+        --ink: 15 23 42;
+        --ink-2: 71 85 105;
+        --ink-3: 100 116 139;
+        --primary: 37 99 235;
+        --primary-hover: 29 78 216;
+        --primary-ink: 29 78 216;
+        --primary-soft: 239 246 255;
+        --success: 4 120 87;
+        --success-soft: 236 253 245;
+        --warning: 180 83 9;
+        --warning-soft: 255 251 235;
+        --danger: 185 28 28;
+        --danger-soft: 254 242 242;
+    }
+
+    @media (prefers-color-scheme: dark) {
+        :root {
+            color-scheme: dark;
+            --canvas: 9 13 24;
+            --surface: 17 24 39;
+            --surface-2: 28 37 54;
+            --line: 39 51 72;
+            --ink: 226 232 240;
+            --ink-2: 160 174 192;
+            --ink-3: 129 145 168;
+            --primary: 37 99 235;
+            --primary-hover: 59 130 246;
+            --primary-ink: 125 170 250;
+            --primary-soft: 23 37 84;
+            --success: 52 211 153;
+            --success-soft: 6 46 37;
+            --warning: 251 191 36;
+            --warning-soft: 45 31 4;
+            --danger: 248 113 113;
+            --danger-soft: 50 14 18;
+        }
+    }
+
+    html {
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+        @apply bg-canvas text-ink antialiased;
+        font-feature-settings: 'cv11', 'ss01';
+    }
+
+    :focus-visible {
+        @apply outline-none ring-2 ring-primary ring-offset-2 ring-offset-canvas;
+    }
+
+    [x-cloak] {
+        display: none !important;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        *, *::before, *::after {
+            animation-duration: 0.01ms !important;
+            transition-duration: 0.01ms !important;
+        }
+    }
+}
+
+@layer components {
+    /* Surfaces */
+    .card {
+        @apply rounded-2xl border border-line bg-surface;
+    }
+
+    .page-title {
+        @apply text-2xl font-semibold tracking-tight text-ink;
+    }
+
+    .section-title {
+        @apply text-base font-semibold text-ink;
+    }
+
+    .muted {
+        @apply text-sm text-ink-2;
+    }
+
+    /* Buttons: the pill motif */
+    .btn {
+        @apply inline-flex min-h-[2.75rem] cursor-pointer select-none items-center justify-center gap-2 rounded-full px-5 text-sm font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50;
+    }
+
+    .btn-primary {
+        @apply btn bg-primary text-white hover:bg-primary-hover;
+    }
+
+    .btn-secondary {
+        @apply btn border border-line bg-surface text-ink hover:bg-surface-2;
+    }
+
+    .btn-danger {
+        @apply btn bg-danger/10 text-danger hover:bg-danger/15;
+    }
+
+    .btn-ghost {
+        @apply btn px-3 text-ink-2 hover:bg-surface-2 hover:text-ink;
+    }
+
+    .link {
+        @apply cursor-pointer font-medium text-primary-ink underline-offset-4 hover:underline;
+    }
+
+    /* Form controls */
+    .input {
+        @apply block w-full rounded-xl border-line bg-surface text-ink shadow-none placeholder:text-ink-3 focus:border-primary focus:ring-primary;
+    }
+
+    .label {
+        @apply block text-sm font-medium text-ink;
+    }
+
+    .help {
+        @apply mt-1.5 text-xs text-ink-3;
+    }
+
+    .checkbox {
+        @apply h-5 w-5 cursor-pointer rounded-md border-line bg-surface text-primary focus:ring-primary;
+    }
+
+    /* Pills and badges */
+    .pill {
+        @apply inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold;
+    }
+
+    .pill-neutral { @apply pill bg-surface-2 text-ink-2; }
+    .pill-primary { @apply pill bg-primary-soft text-primary-ink; }
+    .pill-success { @apply pill bg-success-soft text-success; }
+    .pill-warning { @apply pill bg-warning-soft text-warning; }
+    .pill-danger { @apply pill bg-danger-soft text-danger; }
+
+    /* A bookable time: the motif at its everyday size */
+    .slot {
+        @apply flex min-h-[2.75rem] w-full cursor-pointer items-center justify-center rounded-full border border-primary/30 text-sm font-semibold text-primary-ink transition-colors hover:border-primary hover:bg-primary-soft;
+    }
+
+    /* Inline messages */
+    .alert {
+        @apply flex items-start gap-3 rounded-2xl px-4 py-3 text-sm;
+    }
+
+    .alert-success { @apply alert bg-success-soft text-success; }
+    .alert-warning { @apply alert bg-warning-soft text-warning; }
+    .alert-danger { @apply alert bg-danger-soft text-danger; }
+    .alert-info { @apply alert bg-primary-soft text-primary-ink; }
+
+    /* Segmented tabs */
+    .tabs {
+        @apply inline-flex rounded-full bg-surface-2 p-1;
+    }
+
+    .tab {
+        @apply cursor-pointer rounded-full px-4 py-1.5 text-sm font-medium text-ink-2 transition-colors hover:text-ink;
+    }
+
+    .tab-active {
+        @apply tab bg-surface text-ink shadow-sm;
+    }
+
+    /* The motif at its largest: a cropped pill on sign-in and public pages */
+    .motif {
+        @apply pointer-events-none absolute rounded-full bg-primary;
+    }
 }

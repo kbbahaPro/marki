@@ -49,6 +49,7 @@ class DashboardController extends Controller
             'counts' => [
                 'upcoming' => $user->bookings()->confirmed()->where('end_at', '>', now())->count(),
             ],
+            'next' => $user->bookings()->confirmed()->where('end_at', '>', now())->orderBy('start_at')->with('eventType')->first(),
             'eventTypeCount' => $user->eventTypes()->where('is_active', true)->count(),
             'connection' => $user->googleConnection,
         ]);

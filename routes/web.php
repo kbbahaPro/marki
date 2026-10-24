@@ -85,6 +85,13 @@ if (app()->environment('local')) {
             default => abort(404),
         };
     })->middleware('auth');
+
+    // Guest-only screens, viewable while signed in, for design work.
+    Route::get('/_preview/page/{page}', fn (string $page) => match ($page) {
+        'login' => view('auth.login'),
+        'forgot-password' => view('auth.forgot-password'),
+        default => abort(404),
+    });
 }
 
 /*

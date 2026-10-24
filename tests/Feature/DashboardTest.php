@@ -52,8 +52,8 @@ class DashboardTest extends TestCase
 
         $this->actingAs($this->host)->get('/dashboard')
             ->assertOk()
-            ->assertSeeInOrder(['Monday, November 9, 2026', '10:00 – 10:30', 'Sooner Sam', 'Tuesday, November 10, 2026', '14:00 – 14:30', 'Later Larry'])
-            ->assertSee('2 upcoming bookings')
+            ->assertSeeInOrder(['Monday, November 9', '10:00–10:30', 'Sooner Sam', 'Tuesday, November 10', '14:00–14:30', 'Later Larry'])
+            ->assertSee('You have 2 upcoming bookings.')
             ->assertSee(route('dashboard.bookings.show', $sooner))
             ->assertSee(route('dashboard.bookings.show', $later));
     }
@@ -68,14 +68,18 @@ class DashboardTest extends TestCase
             ->assertSee('Upcoming Uma')->assertDontSee('Past Pat')->assertDontSee('Cancelled Cat');
 
         $this->actingAs($this->host)->get('/dashboard?tab=past')
-            ->assertSee('Past Pat')->assertDontSee('Upcoming Uma');
+            ->assertSee('Past Pat')->assertDontSee('Cancelled Cat');
 
         $this->actingAs($this->host)->get('/dashboard?tab=cancelled')
-            ->assertSee('Cancelled Cat')->assertSee('Cancelled by guest')->assertDontSee('Upcoming Uma');
+            ->assertSee('Cancelled Cat')->assertSee('Cancelled by guest')->assertDontSee('Past Pat');
+
+        // "Upcoming Uma" stays visible on every tab in the Next up card, by design.
     }
 
     public function test_rescheduled_history_rows_are_not_listed_twice(): void
     {
+        // An earlier booking takes the Next up card, so Mover Mo only appears in the list.
+        $this->booking('2026-11-06 09:00', ['guest_name' => 'First Fran']);
         $old = $this->booking('2026-11-09 09:00', ['guest_name' => 'Mover Mo', 'status' => BookingStatus::Rescheduled]);
         $this->booking('2026-11-10 09:00', ['guest_name' => 'Mover Mo', 'rescheduled_from_id' => $old->id]);
 

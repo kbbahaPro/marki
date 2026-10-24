@@ -5,45 +5,71 @@
     $tz = $booking->guest_timezone;
     $start = $booking->start_at->setTimezone($tz);
     $end = $booking->end_at->setTimezone($tz);
+    $confirmed = $booking->status === BookingStatus::Confirmed;
 @endphp
 
-<x-public-layout :title="__('Booking confirmed')">
-    <div class="bg-white shadow sm:rounded-lg p-6 sm:p-8 max-w-xl mx-auto text-center">
-        @if ($booking->status === BookingStatus::Confirmed)
-            <div class="text-4xl" aria-hidden="true">✓</div>
-            <h1 class="mt-2 text-2xl font-semibold text-gray-900">{{ session('rescheduled') ? __('Your booking has a new time') : __('You are scheduled') }}</h1>
-            <p class="mt-1 text-gray-600">{{ __('A confirmation has been sent to your email address.') }}</p>
-        @else
-            <h1 class="text-2xl font-semibold text-gray-900">{{ __('This booking was cancelled') }}</h1>
-        @endif
+<x-public-layout :title="$confirmed ? __('Booking confirmed') : __('Booking cancelled')">
+    <div class="card mx-auto max-w-xl overflow-hidden shadow-xl shadow-ink/[0.04]">
+        {{-- The booked slot, as the motif: a pill holding the confirmed time --}}
+        <div class="relative overflow-hidden px-6 pb-8 pt-10 text-center sm:px-10 {{ $confirmed ? 'bg-primary text-white' : 'bg-surface-2 text-ink' }}">
+            <div class="motif -bottom-24 -left-20 h-40 w-80 bg-white/10" aria-hidden="true"></div>
+            <div class="motif -right-24 -top-16 h-32 w-72 bg-white/10" aria-hidden="true"></div>
 
-        <dl class="mt-6 space-y-3 text-left border-t border-gray-100 pt-6 text-sm">
-            <div class="flex gap-3"><dt class="w-20 shrink-0 text-gray-500">{{ __('What') }}</dt><dd class="font-medium text-gray-900">{{ $booking->eventType->title }} {{ __('with') }} {{ $booking->host->name }}</dd></div>
-            <div class="flex gap-3"><dt class="w-20 shrink-0 text-gray-500">{{ __('When') }}</dt><dd class="text-gray-900">
-                {{ $start->translatedFormat('l, F j, Y') }}<br>
-                {{ $start->format('H:i') }} – {{ $end->format('H:i') }} <span class="text-gray-500">({{ str_replace('_', ' ', $tz) }})</span>
-            </dd></div>
-            <div class="flex gap-3"><dt class="w-20 shrink-0 text-gray-500">{{ __('Where') }}</dt><dd class="text-gray-900">
-                @if ($booking->meeting_url)
-                    <a href="{{ $booking->meeting_url }}" class="text-indigo-600 underline" rel="noopener">{{ $booking->meeting_url }}</a>
-                @elseif ($booking->location_type === LocationType::Custom)
-                    {{ $booking->location_value }}
-                @elseif ($booking->location_type === LocationType::Phone)
-                    {{ __(':name will call you.', ['name' => $booking->host->name]) }}
+            <div class="relative mx-auto flex h-14 w-24 items-center justify-center rounded-full {{ $confirmed ? 'bg-white text-primary' : 'bg-surface text-ink-3' }}">
+                <x-icon :name="$confirmed ? 'check' : 'x'" class="h-7 w-7" />
+            </div>
+            <h1 class="relative mt-5 text-2xl font-bold tracking-tight">
+                @if ($confirmed)
+                    {{ session('rescheduled') ? __('Your booking has a new time') : __('You are scheduled') }}
                 @else
-                    {{ __('A Google Meet link will be in your confirmation email.') }}
+                    {{ __('This booking was cancelled') }}
                 @endif
-            </dd></div>
+            </h1>
+            @if ($confirmed)
+                <p class="relative mt-1 text-sm text-white/80">{{ __('A confirmation with a calendar invitation is on its way to your inbox.') }}</p>
+            @endif
+        </div>
+
+        <dl class="divide-y divide-line px-6 sm:px-10">
+            <div class="flex gap-4 py-4">
+                <dt class="sr-only">{{ __('What') }}</dt>
+                <x-icon name="user" class="mt-0.5 h-5 w-5 text-ink-3" />
+                <dd><span class="font-semibold text-ink">{{ $booking->eventType->title }}</span><br><span class="text-sm text-ink-2">{{ __('with') }} {{ $booking->host->name }}</span></dd>
+            </div>
+            <div class="flex gap-4 py-4">
+                <dt class="sr-only">{{ __('When') }}</dt>
+                <x-icon name="calendar" class="mt-0.5 h-5 w-5 text-ink-3" />
+                <dd class="{{ $confirmed ? '' : 'line-through' }}">
+                    <span class="font-semibold text-ink">{{ $start->translatedFormat('l, F j, Y') }}</span><br>
+                    <span class="text-sm text-ink-2 tabular-nums">{{ $start->format('H:i') }} – {{ $end->format('H:i') }} · {{ str_replace('_', ' ', $tz) }}</span>
+                </dd>
+            </div>
+            <div class="flex gap-4 py-4">
+                <dt class="sr-only">{{ __('Where') }}</dt>
+                <x-icon :name="$booking->location_type === LocationType::Phone ? 'phone' : ($booking->location_type === LocationType::Custom ? 'map-pin' : 'video')" class="mt-0.5 h-5 w-5 text-ink-3" />
+                <dd class="min-w-0 text-sm text-ink">
+                    @if ($booking->meeting_url)
+                        <a href="{{ $booking->meeting_url }}" class="link break-all" rel="noopener">{{ $booking->meeting_url }}</a>
+                    @elseif ($booking->location_type === LocationType::Custom)
+                        {{ $booking->location_value }}
+                    @elseif ($booking->location_type === LocationType::Phone)
+                        {{ __(':name will call you.', ['name' => $booking->host->name]) }}
+                    @else
+                        {{ __('A Google Meet link will be in your confirmation email.') }}
+                    @endif
+                </dd>
+            </div>
         </dl>
 
         {{-- The token is only in the session right after booking; afterwards it lives in the guest's email. --}}
-        @if (session('manage_token') && $booking->status === BookingStatus::Confirmed)
-            <p class="mt-6 border-t border-gray-100 pt-6 text-sm text-gray-600">
-                {{ __('Need to make a change?') }}
-                <a href="{{ route('bookings.reschedule', session('manage_token')) }}" class="text-indigo-600 underline">{{ __('Reschedule') }}</a>
-                ·
-                <a href="{{ route('bookings.manage', session('manage_token')) }}" class="text-indigo-600 underline">{{ __('Cancel') }}</a>
-            </p>
+        @if (session('manage_token') && $confirmed)
+            <div class="flex flex-wrap items-center justify-between gap-3 border-t border-line bg-surface-2/50 px-6 py-4 sm:px-10">
+                <span class="text-sm text-ink-2">{{ __('Need to make a change?') }}</span>
+                <div class="flex gap-2">
+                    <a href="{{ route('bookings.reschedule', session('manage_token')) }}" class="btn-secondary min-h-0 py-2">{{ __('Reschedule') }}</a>
+                    <a href="{{ route('bookings.manage', session('manage_token')) }}" class="btn-ghost min-h-0 py-2">{{ __('Cancel') }}</a>
+                </div>
+            </div>
         @endif
     </div>
 </x-public-layout>

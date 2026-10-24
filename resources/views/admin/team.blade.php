@@ -1,17 +1,17 @@
-<x-app-layout>
+<x-app-layout :title="__('Team')">
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
+        <h1 class="page-title">
             {{ __('Team') }}
-        </h2>
+        </h1>
     </x-slot>
 
-    <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
-            <div class="p-4 sm:p-8 bg-white shadow sm:rounded-lg">
+    <div class="pb-16 pt-6">
+        <div class="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 space-y-6">
+            <div class="card p-5 sm:p-8">
                 <section class="max-w-xl">
                     <header>
-                        <h2 class="text-lg font-medium text-gray-900">{{ __('Invite a team member') }}</h2>
-                        <p class="mt-1 text-sm text-gray-600">{{ __('They will receive an email with a link to set up their account.') }}</p>
+                        <h2 class="section-title">{{ __('Invite a team member') }}</h2>
+                        <p class="mt-1 text-sm text-ink-2">{{ __('They will receive an email with a link to set up their account.') }}</p>
                     </header>
 
                     <form method="post" action="{{ route('team.invite') }}" class="mt-6 space-y-4">
@@ -24,17 +24,17 @@
                         </div>
 
                         <label for="is_admin" class="inline-flex items-center">
-                            <input id="is_admin" type="checkbox" name="is_admin" value="1" class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500" @checked(old('is_admin'))>
-                            <span class="ms-2 text-sm text-gray-600">{{ __('Can manage the team (admin)') }}</span>
+                            <input id="is_admin" type="checkbox" name="is_admin" value="1" class="checkbox" @checked(old('is_admin'))>
+                            <span class="ms-2 text-sm text-ink-2">{{ __('Can manage the team (admin)') }}</span>
                         </label>
 
                         <div class="flex items-center gap-4">
                             <x-primary-button>{{ __('Send invitation') }}</x-primary-button>
 
                             @if (session('status') === 'invitation-sent')
-                                <p class="text-sm text-gray-600">{{ __('Invitation sent.') }}</p>
+                                <p class="text-sm text-ink-2">{{ __('Invitation sent.') }}</p>
                             @elseif (session('status') === 'invitation-revoked')
-                                <p class="text-sm text-gray-600">{{ __('Invitation revoked.') }}</p>
+                                <p class="text-sm text-ink-2">{{ __('Invitation revoked.') }}</p>
                             @endif
                         </div>
                     </form>
@@ -42,14 +42,14 @@
             </div>
 
             @if ($invitations->isNotEmpty())
-                <div class="p-4 sm:p-8 bg-white shadow sm:rounded-lg">
-                    <h2 class="text-lg font-medium text-gray-900">{{ __('Pending invitations') }}</h2>
-                    <ul class="mt-4 divide-y divide-gray-100">
+                <div class="card p-5 sm:p-8">
+                    <h2 class="section-title">{{ __('Pending invitations') }}</h2>
+                    <ul class="mt-4 divide-y divide-line">
                         @foreach ($invitations as $invitation)
                             <li class="py-3 flex items-center justify-between gap-4">
                                 <div class="text-sm">
-                                    <div class="font-medium text-gray-900">{{ $invitation->email }}</div>
-                                    <div class="text-gray-500">
+                                    <div class="font-medium text-ink">{{ $invitation->email }}</div>
+                                    <div class="text-ink-3">
                                         @if ($invitation->isExpired())
                                             {{ __('Expired') }}
                                         @else
@@ -69,15 +69,15 @@
                 </div>
             @endif
 
-            <div class="p-4 sm:p-8 bg-white shadow sm:rounded-lg">
-                <h2 class="text-lg font-medium text-gray-900">{{ __('Members') }}</h2>
-                <ul class="mt-4 divide-y divide-gray-100">
+            <div class="card p-5 sm:p-8">
+                <h2 class="section-title">{{ __('Members') }}</h2>
+                <ul class="mt-4 divide-y divide-line">
                     @foreach ($members as $member)
                         <li class="py-3 text-sm">
-                            <span class="font-medium text-gray-900">{{ $member->name }}</span>
-                            <span class="text-gray-500">· {{ $member->email }} · /{{ $member->username }} · {{ $member->timezone }}</span>
+                            <span class="font-medium text-ink">{{ $member->name }}</span>
+                            <span class="text-ink-3">· {{ $member->email }} · /{{ $member->username }} · {{ $member->timezone }}</span>
                             @if ($member->is_admin)
-                                <span class="ms-2 inline-flex items-center rounded bg-indigo-50 px-2 py-0.5 text-xs font-medium text-indigo-700">{{ __('Admin') }}</span>
+                                <span class="ms-2 inline-flex items-center rounded bg-primary-soft px-2 py-0.5 text-xs font-medium text-primary-ink">{{ __('Admin') }}</span>
                             @endif
                         </li>
                     @endforeach

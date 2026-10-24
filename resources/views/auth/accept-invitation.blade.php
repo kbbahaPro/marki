@@ -1,7 +1,6 @@
 <x-guest-layout>
-    <div class="mb-4 text-sm text-gray-600">
-        {{ __('Set up your account for :email.', ['email' => $invitation->email]) }}
-    </div>
+    <h1 class="text-3xl font-bold tracking-tight text-ink">{{ __('Join the team') }}</h1>
+    <p class="mb-8 mt-2 muted">{{ __('Set up your account for :email.', ['email' => $invitation->email]) }}</p>
 
     <form method="POST" action="{{ route('invitations.accept', $token) }}">
         @csrf
@@ -17,7 +16,7 @@
         <div class="mt-4">
             <x-input-label for="username" :value="__('Username')" />
             <x-text-input id="username" class="block mt-1 w-full" type="text" name="username" :value="old('username')" required autocomplete="off" />
-            <p class="mt-1 text-xs text-gray-500">{{ __('Your booking links will look like :url', ['url' => url('/your-username/event')]) }}</p>
+            <p class="mt-1 text-xs text-ink-3">{{ __('Your booking links will look like :url', ['url' => url('/your-username/event')]) }}</p>
             <x-input-error :messages="$errors->get('username')" class="mt-2" />
         </div>
 

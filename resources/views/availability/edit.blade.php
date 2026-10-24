@@ -18,21 +18,21 @@
     $oldOverrideIntervals = array_values(old('intervals', [['start' => '09:00', 'end' => '17:00']]));
 @endphp
 
-<x-app-layout>
+<x-app-layout :title="__('Availability')">
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
+        <h1 class="page-title">
             {{ __('Availability') }}
-        </h2>
+        </h1>
     </x-slot>
 
-    <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
+    <div class="pb-16 pt-6">
+        <div class="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 space-y-6">
             {{-- Weekly hours --}}
-            <div class="p-4 sm:p-8 bg-white shadow sm:rounded-lg">
+            <div class="card p-5 sm:p-8">
                 <section class="max-w-2xl">
                     <header>
-                        <h2 class="text-lg font-medium text-gray-900">{{ __('Weekly hours') }}</h2>
-                        <p class="mt-1 text-sm text-gray-600">{{ __('When you are generally available for meetings. Times are in the time zone below, and stay correct across daylight saving changes.') }}</p>
+                        <h2 class="section-title">{{ __('Weekly hours') }}</h2>
+                        <p class="mt-1 text-sm text-ink-2">{{ __('When you are generally available for meetings. Times are in the time zone below, and stay correct across daylight saving changes.') }}</p>
                     </header>
 
                     <form method="post" action="{{ route('availability.update') }}" class="mt-6 space-y-6"
@@ -56,31 +56,31 @@
 
                         <x-input-error :messages="$errors->get('days')" />
 
-                        <div class="divide-y divide-gray-100">
+                        <div class="divide-y divide-line">
                             <template x-for="day in days" :key="day.weekday">
                                 <div class="py-3 flex flex-col sm:flex-row sm:items-start gap-3">
                                     <label class="inline-flex items-center w-36 shrink-0 pt-2">
-                                        <input type="checkbox" class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500" x-model="day.enabled" @change="toggle(day)">
-                                        <span class="ms-2 text-sm font-medium text-gray-700" x-text="day.label"></span>
+                                        <input type="checkbox" class="checkbox" x-model="day.enabled" @change="toggle(day)">
+                                        <span class="ms-2 text-sm font-medium text-ink" x-text="day.label"></span>
                                     </label>
 
                                     <div class="flex-1 space-y-2">
-                                        <p class="pt-2 text-sm text-gray-400" x-show="! day.enabled">{{ __('Unavailable') }}</p>
+                                        <p class="pt-2 text-sm text-ink-3" x-show="! day.enabled">{{ __('Unavailable') }}</p>
 
                                         <template x-for="(interval, i) in day.intervals" :key="i">
                                             <div class="flex items-center gap-2" x-show="day.enabled">
                                                 <input type="time" step="300" required x-model="interval.start" :disabled="! day.enabled"
                                                        :name="`days[${day.weekday}][intervals][${i}][start]`"
-                                                       class="border-gray-300 rounded-md shadow-sm text-sm focus:border-indigo-500 focus:ring-indigo-500">
-                                                <span class="text-gray-400">–</span>
+                                                       class="input text-sm">
+                                                <span class="text-ink-3">–</span>
                                                 <input type="time" step="300" required x-model="interval.end" :disabled="! day.enabled"
                                                        :name="`days[${day.weekday}][intervals][${i}][end]`"
-                                                       class="border-gray-300 rounded-md shadow-sm text-sm focus:border-indigo-500 focus:ring-indigo-500">
-                                                <button type="button" @click="remove(day, i)" class="text-sm text-gray-500 hover:text-red-600" :aria-label="`{{ __('Remove') }}`">✕</button>
+                                                       class="input text-sm">
+                                                <button type="button" @click="remove(day, i)" class="btn-ghost min-h-0 h-9 w-9 p-0 hover:text-danger" aria-label="{{ __('Remove') }}"><x-icon name="x" class="h-4 w-4" /></button>
                                             </div>
                                         </template>
 
-                                        <button type="button" x-show="day.enabled" @click="add(day)" class="text-sm text-indigo-600 hover:text-indigo-800">+ {{ __('Add hours') }}</button>
+                                        <button type="button" x-show="day.enabled" @click="add(day)" class="btn-ghost -ms-3 min-h-0 py-1.5 text-primary-ink"><x-icon name="plus" class="h-4 w-4" />{{ __('Add hours') }}</button>
                                     </div>
                                 </div>
                             </template>
@@ -91,12 +91,12 @@
                             ->map(fn ($messages, $key) => ($weekdayNames[(int) explode('.', $key)[1]] ?? '').': '.$messages[0])
                             ->unique()->values()->all()" />
 
-                        <p class="text-xs text-gray-500">{{ __('An end time of 00:00 means midnight at the end of the day.') }}</p>
+                        <p class="text-xs text-ink-3">{{ __('An end time of 00:00 means midnight at the end of the day.') }}</p>
 
                         <div class="flex items-center gap-4">
                             <x-primary-button>{{ __('Save') }}</x-primary-button>
                             @if (session('status') === 'availability-updated')
-                                <p class="text-sm text-gray-600">{{ __('Saved.') }}</p>
+                                <p class="text-sm text-ink-2">{{ __('Saved.') }}</p>
                             @endif
                         </div>
                     </form>
@@ -104,20 +104,20 @@
             </div>
 
             {{-- Date overrides --}}
-            <div class="p-4 sm:p-8 bg-white shadow sm:rounded-lg">
+            <div class="card p-5 sm:p-8">
                 <section class="max-w-2xl">
                     <header>
-                        <h2 class="text-lg font-medium text-gray-900">{{ __('Date overrides') }}</h2>
-                        <p class="mt-1 text-sm text-gray-600">{{ __('Days off or different hours on specific dates. These replace your weekly hours for that date.') }}</p>
+                        <h2 class="section-title">{{ __('Date overrides') }}</h2>
+                        <p class="mt-1 text-sm text-ink-2">{{ __('Days off or different hours on specific dates. These replace your weekly hours for that date.') }}</p>
                     </header>
 
                     @if ($overrides->isNotEmpty())
-                        <ul class="mt-4 divide-y divide-gray-100">
+                        <ul class="mt-4 divide-y divide-line">
                             @foreach ($overrides as $date => $rows)
                                 <li class="py-3 flex items-center justify-between gap-4">
                                     <div class="text-sm">
-                                        <div class="font-medium text-gray-900">{{ \Illuminate\Support\Carbon::parse($date)->translatedFormat('l, F j, Y') }}</div>
-                                        <div class="text-gray-500">
+                                        <div class="font-medium text-ink">{{ \Illuminate\Support\Carbon::parse($date)->translatedFormat('l, F j, Y') }}</div>
+                                        <div class="text-ink-3">
                                             @if ($rows->first()->isUnavailable())
                                                 {{ __('Unavailable') }}
                                             @else
@@ -147,31 +147,31 @@
 
                         <label class="inline-flex items-center">
                             <input type="hidden" name="unavailable" value="0">
-                            <input type="checkbox" name="unavailable" value="1" x-model="unavailable" class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
-                            <span class="ms-2 text-sm text-gray-600">{{ __('Unavailable all day') }}</span>
+                            <input type="checkbox" name="unavailable" value="1" x-model="unavailable" class="checkbox">
+                            <span class="ms-2 text-sm text-ink-2">{{ __('Unavailable all day') }}</span>
                         </label>
 
                         <div class="space-y-2" x-show="! unavailable">
                             <template x-for="(interval, i) in intervals" :key="i">
                                 <div class="flex items-center gap-2">
                                     <input type="time" step="300" required x-model="interval.start" :disabled="unavailable" :name="`intervals[${i}][start]`"
-                                           class="border-gray-300 rounded-md shadow-sm text-sm focus:border-indigo-500 focus:ring-indigo-500">
-                                    <span class="text-gray-400">–</span>
+                                           class="input text-sm">
+                                    <span class="text-ink-3">–</span>
                                     <input type="time" step="300" required x-model="interval.end" :disabled="unavailable" :name="`intervals[${i}][end]`"
-                                           class="border-gray-300 rounded-md shadow-sm text-sm focus:border-indigo-500 focus:ring-indigo-500">
-                                    <button type="button" x-show="intervals.length > 1" @click="intervals.splice(i, 1)" class="text-sm text-gray-500 hover:text-red-600">✕</button>
+                                           class="input text-sm">
+                                    <button type="button" x-show="intervals.length > 1" @click="intervals.splice(i, 1)" class="btn-ghost min-h-0 h-9 w-9 p-0 hover:text-danger" aria-label="{{ __('Remove') }}"><x-icon name="x" class="h-4 w-4" /></button>
                                 </div>
                             </template>
-                            <button type="button" @click="intervals.push({ start: '09:00', end: '17:00' })" class="text-sm text-indigo-600 hover:text-indigo-800">+ {{ __('Add hours') }}</button>
+                            <button type="button" @click="intervals.push({ start: '09:00', end: '17:00' })" class="btn-ghost -ms-3 min-h-0 py-1.5 text-primary-ink"><x-icon name="plus" class="h-4 w-4" />{{ __('Add hours') }}</button>
                             <x-input-error :messages="$errors->override->get('intervals')" />
                         </div>
 
                         <div class="flex items-center gap-4">
                             <x-primary-button>{{ __('Save override') }}</x-primary-button>
                             @if (session('status') === 'override-saved')
-                                <p class="text-sm text-gray-600">{{ __('Override saved.') }}</p>
+                                <p class="text-sm text-ink-2">{{ __('Override saved.') }}</p>
                             @elseif (session('status') === 'override-deleted')
-                                <p class="text-sm text-gray-600">{{ __('Override removed.') }}</p>
+                                <p class="text-sm text-ink-2">{{ __('Override removed.') }}</p>
                             @endif
                         </div>
                     </form>

@@ -1,5 +1,7 @@
 <x-guest-layout>
-    <form method="POST" action="{{ route('password.store') }}">
+    <h1 class="text-3xl font-bold tracking-tight text-ink">{{ __('Choose a new password') }}</h1>
+
+    <form class="mt-8" method="POST" action="{{ route('password.store') }}">
         @csrf
 
         <!-- Password Reset Token -->

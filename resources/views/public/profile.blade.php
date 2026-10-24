@@ -5,7 +5,7 @@
 <x-public-layout :title="$host->name">
     <div class="mx-auto max-w-2xl">
         <div class="text-center">
-            <x-avatar :user="$host" size="xl" decorative class="mx-auto ring-4 ring-surface" />
+            <x-avatar :user="$host" size="xl" decorative class="mx-auto ring-4 ring-surface" loading="eager" />
             <h1 class="mt-4 text-3xl font-bold tracking-tight text-ink">{{ $host->name }}</h1>
             @if ($host->headline())
                 <p class="mt-1 font-medium text-ink-2">{{ $host->headline() }}</p>

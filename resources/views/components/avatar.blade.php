@@ -15,8 +15,9 @@
 @endphp
 
 @if ($url = $user->avatarUrl())
-    <img src="{{ $url }}" alt="{{ $decorative ? '' : $user->name }}" loading="lazy" decoding="async"
-         {{ $attributes->merge(['class' => $classes.' bg-surface-2 object-cover']) }}>
+    {{-- Lazy by default; pass loading="eager" for photos visible on first paint. --}}
+    <img src="{{ $url }}" alt="{{ $decorative ? '' : $user->name }}" decoding="async"
+         {{ $attributes->merge(['class' => $classes.' bg-surface-2 object-cover', 'loading' => 'lazy']) }}>
 @elseif ($decorative)
     <span {{ $attributes->merge(['class' => $classes.' bg-primary font-bold text-white']) }} aria-hidden="true">{{ $user->initials() }}</span>
 @else

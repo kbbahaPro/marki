@@ -1,6 +1,7 @@
 <?php
 
-use App\Http\Controllers\Admin\TeamController;
+use App\Http\Controllers\Admin\MemberController;
+use App\Http\Controllers\Admin\TeamAdminController;
 use App\Http\Controllers\AvailabilityController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EventTypeController;
@@ -8,6 +9,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Public\BookingConfirmationController;
 use App\Http\Controllers\Public\BookingPageController;
 use App\Http\Controllers\Public\ManageBookingController;
+use App\Http\Controllers\Public\TeamPageController;
 use App\Http\Controllers\Settings\CalendarController;
 use App\Mail\BookingConfirmedGuest;
 use App\Mail\BookingConfirmedHost;
@@ -55,10 +57,23 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->parameters(['event-types' => 'eventType']);
 });
 
-Route::middleware(['auth', 'verified', 'admin'])->prefix('team')->name('team.')->group(function () {
-    Route::get('/', [TeamController::class, 'index'])->name('index');
-    Route::post('/invitations', [TeamController::class, 'invite'])->middleware('throttle:20,1')->name('invite');
-    Route::delete('/invitations/{invitation}', [TeamController::class, 'revoke'])->name('invitations.revoke');
+Route::middleware(['auth', 'verified', 'admin'])->prefix('admin')->group(function () {
+    Route::prefix('members')->name('members.')->group(function () {
+        Route::get('/', [MemberController::class, 'index'])->name('index');
+        Route::post('/invitations', [MemberController::class, 'invite'])->middleware('throttle:20,1')->name('invite');
+        Route::delete('/invitations/{invitation}', [MemberController::class, 'revoke'])->name('invitations.revoke');
+    });
+
+    Route::prefix('teams')->name('admin.teams.')->group(function () {
+        Route::get('/', [TeamAdminController::class, 'index'])->name('index');
+        Route::post('/', [TeamAdminController::class, 'store'])->name('store');
+        Route::get('/{team}', [TeamAdminController::class, 'edit'])->name('edit');
+        Route::put('/{team}', [TeamAdminController::class, 'update'])->name('update');
+        Route::delete('/{team}', [TeamAdminController::class, 'destroy'])->name('destroy');
+        Route::post('/{team}/members', [TeamAdminController::class, 'addMember'])->name('members.store');
+        Route::patch('/{team}/members/{user}', [TeamAdminController::class, 'updateMember'])->name('members.update');
+        Route::delete('/{team}/members/{user}', [TeamAdminController::class, 'removeMember'])->name('members.destroy');
+    });
 });
 
 require __DIR__.'/auth.php';
@@ -113,6 +128,8 @@ Route::prefix('/manage/{token}')->where(['token' => '[A-Za-z0-9]{64}'])->name('b
     Route::get('/reschedule/slots', [ManageBookingController::class, 'slots'])->middleware('throttle:booking-slots')->name('reschedule.slots');
     Route::post('/reschedule', [ManageBookingController::class, 'reschedule'])->middleware('throttle:booking-submit')->name('reschedule.store');
 });
+
+Route::get('/team/{team}', [TeamPageController::class, 'show'])->name('public.team');
 
 Route::pattern('username', '[a-z0-9](?:[a-z0-9-]{1,28})[a-z0-9]');
 Route::pattern('slug', '[a-z0-9]+(?:-[a-z0-9]+)*');

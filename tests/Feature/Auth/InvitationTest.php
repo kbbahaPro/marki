@@ -30,7 +30,7 @@ class InvitationTest extends TestCase
         $admin = User::factory()->admin()->create();
 
         $this->actingAs($admin)
-            ->post('/team/invitations', ['email' => 'new@example.com'])
+            ->post('/admin/members/invitations', ['email' => 'new@example.com'])
             ->assertSessionHasNoErrors()
             ->assertRedirect();
 
@@ -51,8 +51,8 @@ class InvitationTest extends TestCase
         Mail::fake();
         $admin = User::factory()->admin()->create();
 
-        $this->actingAs($admin)->post('/team/invitations', ['email' => 'new@example.com']);
-        $this->actingAs($admin)->post('/team/invitations', ['email' => 'new@example.com']);
+        $this->actingAs($admin)->post('/admin/members/invitations', ['email' => 'new@example.com']);
+        $this->actingAs($admin)->post('/admin/members/invitations', ['email' => 'new@example.com']);
 
         $this->assertSame(1, Invitation::count());
     }
@@ -63,7 +63,7 @@ class InvitationTest extends TestCase
         User::factory()->create(['email' => 'taken@example.com']);
 
         $this->actingAs($admin)
-            ->post('/team/invitations', ['email' => 'taken@example.com'])
+            ->post('/admin/members/invitations', ['email' => 'taken@example.com'])
             ->assertSessionHasErrors('email');
     }
 
@@ -71,8 +71,8 @@ class InvitationTest extends TestCase
     {
         $user = User::factory()->create();
 
-        $this->actingAs($user)->get('/team')->assertForbidden();
-        $this->actingAs($user)->post('/team/invitations', ['email' => 'x@example.com'])->assertForbidden();
+        $this->actingAs($user)->get('/admin/members')->assertForbidden();
+        $this->actingAs($user)->post('/admin/members/invitations', ['email' => 'x@example.com'])->assertForbidden();
     }
 
     public function test_admin_can_view_team_page_and_revoke_invitation(): void
@@ -80,10 +80,10 @@ class InvitationTest extends TestCase
         $admin = User::factory()->admin()->create();
         [$invitation] = Invitation::issue('pending@example.com', $admin);
 
-        $this->actingAs($admin)->get('/team')->assertOk()->assertSee('pending@example.com');
+        $this->actingAs($admin)->get('/admin/members')->assertOk()->assertSee('pending@example.com');
 
         $this->actingAs($admin)
-            ->delete("/team/invitations/{$invitation->id}")
+            ->delete("/admin/members/invitations/{$invitation->id}")
             ->assertRedirect();
 
         $this->assertModelMissing($invitation);

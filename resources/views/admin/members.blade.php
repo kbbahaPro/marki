@@ -1,7 +1,7 @@
-<x-app-layout :title="__('Team')">
+<x-app-layout :title="__('Members')">
     <x-slot name="header">
         <h1 class="page-title">
-            {{ __('Team') }}
+            {{ __('Members') }}
         </h1>
     </x-slot>
 
@@ -14,7 +14,7 @@
                         <p class="mt-1 text-sm text-ink-2">{{ __('They will receive an email with a link to set up their account.') }}</p>
                     </header>
 
-                    <form method="post" action="{{ route('team.invite') }}" class="mt-6 space-y-4">
+                    <form method="post" action="{{ route('members.invite') }}" class="mt-6 space-y-4">
                         @csrf
 
                         <div>
@@ -58,7 +58,7 @@
                                         @if ($invitation->is_admin) · {{ __('Admin') }} @endif
                                     </div>
                                 </div>
-                                <form method="post" action="{{ route('team.invitations.revoke', $invitation) }}">
+                                <form method="post" action="{{ route('members.invitations.revoke', $invitation) }}">
                                     @csrf
                                     @method('delete')
                                     <x-secondary-button type="submit">{{ __('Revoke') }}</x-secondary-button>

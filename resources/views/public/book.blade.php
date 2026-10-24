@@ -14,7 +14,7 @@
         {{-- Event summary --}}
         <aside class="border-b border-line p-6 sm:p-8 md:border-b-0 md:border-r">
             <a href="{{ route('public.profile', $host->username) }}" class="group flex items-center gap-3">
-                <x-avatar :user="$host" size="lg" decorative />
+                <x-avatar :user="$host" size="lg" decorative loading="eager" />
                 <span class="min-w-0">
                     <span class="block truncate font-semibold text-ink group-hover:underline">{{ $host->name }}</span>
                     @if ($host->headline())

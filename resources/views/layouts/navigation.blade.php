@@ -6,7 +6,8 @@
         ['route' => 'event-types.index', 'match' => 'event-types.*', 'icon' => 'layers', 'label' => __('Event types')],
         ['route' => 'availability.edit', 'match' => 'availability.*', 'icon' => 'clock', 'label' => __('Availability')],
         ['route' => 'settings.calendar', 'match' => 'settings.calendar*', 'icon' => 'calendar', 'label' => __('Calendar'), 'alert' => $calendarBroken],
-        $user->is_admin ? ['route' => 'team.index', 'match' => 'team.*', 'icon' => 'users', 'label' => __('Team')] : null,
+        $user->is_admin ? ['route' => 'members.index', 'match' => 'members.*', 'icon' => 'user', 'label' => __('Members')] : null,
+        $user->is_admin ? ['route' => 'admin.teams.index', 'match' => 'admin.teams.*', 'icon' => 'users', 'label' => __('Teams')] : null,
     ]);
 @endphp
 
@@ -17,7 +18,7 @@
                 <x-application-logo />
             </a>
 
-            <div class="hidden items-center gap-1 md:flex">
+            <div class="hidden items-center gap-1 lg:flex">
                 @foreach ($links as $link)
                     <x-nav-link :href="route($link['route'])" :active="request()->routeIs($link['match'])">
                         <x-icon :name="$link['icon']" class="h-4 w-4" />
@@ -30,7 +31,7 @@
             </div>
         </div>
 
-        <div class="hidden md:block">
+        <div class="hidden lg:block">
             <x-dropdown align="right" width="w-60">
                 <x-slot name="trigger">
                     <button class="flex items-center gap-2 rounded-full py-1 pe-3 ps-1 text-sm font-medium text-ink-2 transition-colors hover:bg-surface-2 hover:text-ink" aria-haspopup="menu">
@@ -62,14 +63,14 @@
             </x-dropdown>
         </div>
 
-        <button @click="open = ! open" class="btn-ghost md:hidden" :aria-expanded="open" aria-controls="mobile-menu">
+        <button @click="open = ! open" class="btn-ghost lg:hidden" :aria-expanded="open" aria-controls="mobile-menu">
             <span class="sr-only">{{ __('Menu') }}</span>
             <x-icon name="menu" x-show="! open" />
             <x-icon name="x" x-show="open" x-cloak />
         </button>
     </div>
 
-    <div id="mobile-menu" x-show="open" x-cloak x-transition.opacity class="border-t border-line bg-surface px-4 pb-4 pt-3 md:hidden">
+    <div id="mobile-menu" x-show="open" x-cloak x-transition.opacity class="border-t border-line bg-surface px-4 pb-4 pt-3 lg:hidden">
         <div class="space-y-1">
             @foreach ($links as $link)
                 <x-responsive-nav-link :href="route($link['route'])" :active="request()->routeIs($link['match'])">

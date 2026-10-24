@@ -12,14 +12,14 @@ use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
-class TeamController extends Controller
+class MemberController extends Controller
 {
     /**
      * List team members and pending invitations.
      */
     public function index(): View
     {
-        return view('admin.team', [
+        return view('admin.members', [
             'members' => User::query()->orderBy('name')->get(),
             'invitations' => Invitation::query()->pending()->with('inviter')->latest()->get(),
         ]);

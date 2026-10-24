@@ -34,7 +34,7 @@
             <x-dropdown align="right" width="w-60">
                 <x-slot name="trigger">
                     <button class="flex items-center gap-2 rounded-full py-1 pe-3 ps-1 text-sm font-medium text-ink-2 transition-colors hover:bg-surface-2 hover:text-ink" aria-haspopup="menu">
-                        <span class="flex h-8 w-8 items-center justify-center rounded-full bg-primary-soft text-sm font-semibold text-primary-ink" aria-hidden="true">{{ mb_strtoupper(mb_substr($user->name, 0, 1)) }}</span>
+                        <x-avatar :user="$user" size="sm" decorative />
                         <span class="max-w-[10rem] truncate">{{ $user->name }}</span>
                         <x-icon name="chevron-down" class="h-4 w-4" />
                     </button>

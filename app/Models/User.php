@@ -11,8 +11,9 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Storage;
 
-#[Fillable(['name', 'email', 'username', 'timezone', 'password'])]
+#[Fillable(['name', 'email', 'username', 'timezone', 'password', 'job_title', 'company'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
@@ -36,6 +37,36 @@ class User extends Authenticatable
     protected static function booted(): void
     {
         static::created(fn (User $user) => Schedule::createDefaultFor($user));
+    }
+
+    public function avatarUrl(): ?string
+    {
+        return $this->avatar_path ? Storage::disk('public')->url($this->avatar_path) : null;
+    }
+
+    /**
+     * Up to two initials, for when there is no photo.
+     */
+    public function initials(): string
+    {
+        $parts = preg_split('/\s+/u', trim($this->name), -1, PREG_SPLIT_NO_EMPTY);
+        $first = mb_substr($parts[0] ?? '?', 0, 1);
+        $last = count($parts) > 1 ? mb_substr(end($parts), 0, 1) : '';
+
+        return mb_strtoupper($first.$last);
+    }
+
+    /**
+     * "Head of Sales at Acme", "Head of Sales", "Acme", or null.
+     */
+    public function headline(): ?string
+    {
+        return match (true) {
+            filled($this->job_title) && filled($this->company) => __(':title at :company', ['title' => $this->job_title, 'company' => $this->company]),
+            filled($this->job_title) => $this->job_title,
+            filled($this->company) => $this->company,
+            default => null,
+        };
     }
 
     /**

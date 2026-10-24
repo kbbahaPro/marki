@@ -31,10 +31,13 @@
         </div>
 
         <dl class="divide-y divide-line px-6 sm:px-10">
-            <div class="flex gap-4 py-4">
+            <div class="flex items-center gap-4 py-4">
                 <dt class="sr-only">{{ __('What') }}</dt>
-                <x-icon name="user" class="mt-0.5 h-5 w-5 text-ink-3" />
-                <dd><span class="font-semibold text-ink">{{ $booking->eventType->title }}</span><br><span class="text-sm text-ink-2">{{ __('with') }} {{ $booking->host->name }}</span></dd>
+                <x-avatar :user="$booking->host" size="md" decorative />
+                <dd>
+                    <span class="font-semibold text-ink">{{ $booking->eventType->title }}</span><br>
+                    <span class="text-sm text-ink-2">{{ __('with') }} {{ $booking->host->name }}@if ($booking->host->headline()) · {{ $booking->host->headline() }}@endif</span>
+                </dd>
             </div>
             <div class="flex gap-4 py-4">
                 <dt class="sr-only">{{ __('When') }}</dt>

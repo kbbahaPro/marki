@@ -13,9 +13,14 @@
     <div class="card grid overflow-hidden shadow-xl shadow-ink/[0.04] md:grid-cols-[19rem_1fr]" x-data="bookingPage(@js($config))">
         {{-- Event summary --}}
         <aside class="border-b border-line p-6 sm:p-8 md:border-b-0 md:border-r">
-            <a href="{{ route('public.profile', $host->username) }}" class="group inline-flex items-center gap-3">
-                <span class="flex h-11 w-11 items-center justify-center rounded-full bg-primary text-base font-bold text-white" aria-hidden="true">{{ mb_strtoupper(mb_substr($host->name, 0, 1)) }}</span>
-                <span class="text-sm font-medium text-ink-2 group-hover:text-ink">{{ $host->name }}</span>
+            <a href="{{ route('public.profile', $host->username) }}" class="group flex items-center gap-3">
+                <x-avatar :user="$host" size="lg" decorative />
+                <span class="min-w-0">
+                    <span class="block truncate font-semibold text-ink group-hover:underline">{{ $host->name }}</span>
+                    @if ($host->headline())
+                        <span class="block text-sm text-ink-3">{{ $host->headline() }}</span>
+                    @endif
+                </span>
             </a>
 
             <h1 class="mt-5 text-2xl font-bold tracking-tight text-ink">{{ $eventType->title }}</h1>

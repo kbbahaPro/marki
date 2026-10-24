@@ -34,6 +34,11 @@ class ProfileUpdateRequest extends FormRequest
                 Rule::unique(User::class)->ignore($this->user()->id),
             ],
             'timezone' => ['required', 'timezone:all'],
+            'job_title' => ['nullable', 'string', 'max:100'],
+            'company' => ['nullable', 'string', 'max:100'],
+            // Re-encoded server-side (AvatarService), so only the input format matters here.
+            'avatar' => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp', 'max:4096', 'dimensions:min_width=100,min_height=100,max_width=8000,max_height=8000'],
+            'remove_avatar' => ['sometimes', 'boolean'],
         ];
     }
 }

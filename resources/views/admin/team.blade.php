@@ -74,7 +74,11 @@
                 <ul class="mt-4 divide-y divide-line">
                     @foreach ($members as $member)
                         <li class="py-3 text-sm">
+                            <x-avatar :user="$member" size="sm" decorative class="me-2 align-middle" />
                             <span class="font-medium text-ink">{{ $member->name }}</span>
+                            @if ($member->headline())
+                                <span class="text-ink-2">· {{ $member->headline() }}</span>
+                            @endif
                             <span class="text-ink-3">· {{ $member->email }} · /{{ $member->username }} · {{ $member->timezone }}</span>
                             @if ($member->is_admin)
                                 <span class="ms-2 inline-flex items-center rounded bg-primary-soft px-2 py-0.5 text-xs font-medium text-primary-ink">{{ __('Admin') }}</span>

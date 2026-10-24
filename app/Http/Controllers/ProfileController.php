@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\ProfileUpdateRequest;
+use App\Services\AvatarService;
 use App\Services\Calendar\Google\GoogleApi;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -26,9 +27,19 @@ class ProfileController extends Controller
     /**
      * Update the user's profile information.
      */
-    public function update(ProfileUpdateRequest $request): RedirectResponse
+    public function update(ProfileUpdateRequest $request, AvatarService $avatars): RedirectResponse
     {
-        $request->user()->fill($request->validated());
+        $request->user()->fill($request->safe()->except(['avatar', 'remove_avatar']));
+
+        if ($request->hasFile('avatar')) {
+            try {
+                $avatars->replace($request->user(), $request->file('avatar'));
+            } catch (\RuntimeException) {
+                throw ValidationException::withMessages(['avatar' => __('That image could not be read. Please try a JPG, PNG or WebP file.')]);
+            }
+        } elseif ($request->boolean('remove_avatar')) {
+            $avatars->remove($request->user());
+        }
 
         if ($request->user()->isDirty('email')) {
             $request->user()->email_verified_at = null;

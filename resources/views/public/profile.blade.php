@@ -5,9 +5,12 @@
 <x-public-layout :title="$host->name">
     <div class="mx-auto max-w-2xl">
         <div class="text-center">
-            <span class="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-primary text-2xl font-bold text-white" aria-hidden="true">{{ mb_strtoupper(mb_substr($host->name, 0, 1)) }}</span>
+            <x-avatar :user="$host" size="xl" decorative class="mx-auto ring-4 ring-surface" />
             <h1 class="mt-4 text-3xl font-bold tracking-tight text-ink">{{ $host->name }}</h1>
-            <p class="mt-2 text-ink-2">{{ __('Pick a meeting type to see available times.') }}</p>
+            @if ($host->headline())
+                <p class="mt-1 font-medium text-ink-2">{{ $host->headline() }}</p>
+            @endif
+            <p class="mt-3 text-sm text-ink-3">{{ __('Pick a meeting type to see available times.') }}</p>
         </div>
 
         @if ($eventTypes->isEmpty())

@@ -6,12 +6,22 @@
     $start = $booking->start_at->setTimezone($timezone);
     $end = $booking->end_at->setTimezone($timezone);
     $guestStart = $booking->start_at->setTimezone($booking->guest_timezone);
+
+    $viewer = auth()->user();
+    $team = $booking->eventType->team;
+    // Team admins who do not attend came from the team's Bookings page.
+    $fromTeam = $team && ! $booking->hosts->contains($viewer);
+    $organizerIsViewer = $booking->host_id === $viewer->id;
 @endphp
 
 <x-app-layout :title="$booking->guest_name">
     <x-slot name="header">
         <div class="mx-auto max-w-3xl">
-            <a href="{{ route('dashboard') }}" class="btn-ghost -ms-3 min-h-0 py-1.5 text-sm"><x-icon name="arrow-left" class="h-4 w-4" />{{ __('All bookings') }}</a>
+            @if ($fromTeam)
+                <a href="{{ route('teams.bookings', $team) }}" class="btn-ghost -ms-3 min-h-0 py-1.5 text-sm"><x-icon name="arrow-left" class="h-4 w-4" />{{ __(':team bookings', ['team' => $team->name]) }}</a>
+            @else
+                <a href="{{ route('dashboard') }}" class="btn-ghost -ms-3 min-h-0 py-1.5 text-sm"><x-icon name="arrow-left" class="h-4 w-4" />{{ __('All bookings') }}</a>
+            @endif
             <div class="mt-3 flex flex-wrap items-center gap-x-4 gap-y-3">
                 <span class="rounded-full px-4 py-2 text-lg font-bold tabular-nums {{ $booking->status === BookingStatus::Confirmed ? 'bg-primary text-white' : 'bg-surface-2 text-ink-3 line-through' }}">{{ $start->format('H:i') }}–{{ $end->format('H:i') }}</span>
                 <div class="min-w-0">
@@ -46,7 +56,7 @@
                             <span class="pill-success">{{ $booking->end_at->isPast() ? __('Completed') : __('Confirmed') }}</span>
                             @break
                         @case(BookingStatus::Cancelled)
-                            <span class="pill-neutral">{{ $booking->cancelled_by === 'host' ? __('Cancelled by you') : __('Cancelled by guest') }}</span>
+                            <span class="pill-neutral">{{ $booking->cancelledByLabel($viewer) }}</span>
                             @break
                         @case(BookingStatus::Rescheduled)
                             <span class="pill-primary">{{ __('Moved to a new time') }}</span>
@@ -63,6 +73,22 @@
                             <div class="text-ink-3">{{ __('Guest\'s time: :time (:tz)', ['time' => $guestStart->translatedFormat('D H:i'), 'tz' => str_replace('_', ' ', $booking->guest_timezone)]) }}</div>
                         @endif
                     </dd>
+
+                    @if ($team)
+                        <dt class="text-ink-3">{{ __('Hosts') }}</dt>
+                        <dd class="space-y-2 text-ink">
+                            @foreach ($booking->hosts as $host)
+                                <div class="flex items-center gap-2">
+                                    <x-avatar :user="$host" size="sm" decorative />
+                                    <span>{{ $host->name }}@if ($host->is($viewer)) <span class="text-ink-3">({{ __('you') }})</span>@endif</span>
+                                    @if ($host->id === $booking->host_id && $booking->hosts->count() > 1)
+                                        <span class="pill-neutral">{{ __('Organizer') }}</span>
+                                    @endif
+                                </div>
+                            @endforeach
+                            <div class="text-ink-3">{{ $booking->eventType->scheduling_type->label() }} · {{ $team->name }}</div>
+                        </dd>
+                    @endif
 
                     <dt class="text-ink-3">{{ __('Where') }}</dt>
                     <dd class="text-ink">
@@ -104,11 +130,11 @@
                     <dt class="text-ink-3">{{ __('Calendar') }}</dt>
                     <dd class="text-ink">
                         @switch($booking->sync_status)
-                            @case(SyncStatus::Synced) {{ __('In your Google Calendar') }} @break
-                            @case(SyncStatus::Skipped) {{ __('Google Calendar not connected') }} @break
+                            @case(SyncStatus::Synced) {{ $organizerIsViewer ? __('In your Google Calendar') : __('In :name’s Google Calendar', ['name' => $booking->host->name]) }} @break
+                            @case(SyncStatus::Skipped) {{ $organizerIsViewer ? __('Google Calendar not connected') : __(':name has not connected Google Calendar', ['name' => $booking->host->name]) }} @break
                             @case(SyncStatus::Pending) {{ __('Being added…') }} @break
                             @case(SyncStatus::Failed)
-                                <span class="text-danger">{{ __('Could not be added to your calendar.') }}</span>
+                                <span class="text-danger">{{ $organizerIsViewer ? __('Could not be added to your calendar.') : __('Could not be added to :name’s calendar.', ['name' => $booking->host->name]) }}</span>
                                 @if ($booking->status === BookingStatus::Confirmed)
                                     <form method="post" action="{{ route('dashboard.bookings.sync', $booking) }}" class="inline">
                                         @csrf

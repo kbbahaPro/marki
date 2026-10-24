@@ -18,6 +18,7 @@
                 <h1 class="page-title">{{ $team->name }}</h1>
                 <a href="{{ $team->publicUrl() }}" target="_blank" rel="noopener" class="link mt-1 inline-flex items-center gap-1 text-sm">{{ preg_replace('#^https?://#', '', $team->publicUrl()) }} <x-icon name="external" class="h-3.5 w-3.5" /></a>
             </div>
+            <a href="{{ route('teams.bookings', $team) }}" class="btn-secondary"><x-icon name="calendar" class="h-4 w-4" /> {{ __('Bookings') }}</a>
         </div>
     </x-slot>
 

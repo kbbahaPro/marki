@@ -4,7 +4,7 @@
     <h1 style="margin:0 0 8px;font-size:20px;">{{ __('Your booking was cancelled') }}</h1>
     <p style="margin:0;">
         @if ($byHost)
-            {{ __(':host cancelled your :title on :date at :time (:timezone).', ['host' => $booking->host->name, 'title' => $booking->eventType->title, 'date' => $when['date'], 'time' => $when['time'], 'timezone' => $when['timezone']]) }}
+            {{ __(':host cancelled your :title on :date at :time (:timezone).', ['host' => $booking->cancelledBy?->name ?? $booking->host->name, 'title' => $booking->eventType->title, 'date' => $when['date'], 'time' => $when['time'], 'timezone' => $when['timezone']]) }}
         @else
             {{ __('You cancelled your :title with :host on :date at :time (:timezone).', ['host' => $booking->hostNames(), 'title' => $booking->eventType->title, 'date' => $when['date'], 'time' => $when['time'], 'timezone' => $when['timezone']]) }}
         @endif

@@ -8,16 +8,20 @@ use App\Exceptions\SlotUnavailableException;
 use App\Http\Controllers\Public\Concerns\RendersBookingCalendar;
 use App\Jobs\SyncBookingToCalendar;
 use App\Models\Booking;
+use App\Models\User;
 use App\Services\Booking\BookingService;
 use App\Services\Scheduling\AvailabilityService;
 use Carbon\CarbonImmutable;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 /**
- * A host's own bookings: lists, details, and host-side cancel/reschedule.
+ * The bookings a person hosts or co-hosts: lists, details, and host-side
+ * cancel/reschedule. Team admins can also open their team's bookings here
+ * (listed on the team Bookings page).
  */
 class DashboardController extends Controller
 {
@@ -31,7 +35,7 @@ class DashboardController extends Controller
         $tab = in_array($request->query('tab'), self::TABS, true) ? $request->query('tab') : 'upcoming';
 
         // "Rescheduled" rows are history; the booking they moved to is listed instead.
-        $query = $user->bookings()->with('eventType');
+        $query = $this->attended($user)->with(['eventType.team', 'hosts', 'host', 'cancelledBy']);
 
         match ($tab) {
             'upcoming' => $query->confirmed()->where('end_at', '>', now())->orderBy('start_at'),
@@ -47,9 +51,9 @@ class DashboardController extends Controller
             // Upcoming bookings read best grouped by day in the host's zone.
             'days' => $bookings->getCollection()->groupBy(fn (Booking $b) => $b->start_at->setTimezone($user->timezone)->toDateString()),
             'counts' => [
-                'upcoming' => $user->bookings()->confirmed()->where('end_at', '>', now())->count(),
+                'upcoming' => $this->attended($user)->confirmed()->where('end_at', '>', now())->count(),
             ],
-            'next' => $user->bookings()->confirmed()->where('end_at', '>', now())->orderBy('start_at')->with('eventType')->first(),
+            'next' => $this->attended($user)->confirmed()->where('end_at', '>', now())->orderBy('start_at')->with('eventType')->first(),
             'eventTypeCount' => $user->eventTypes()->where('is_active', true)->count(),
             'connection' => $user->googleConnection,
         ]);
@@ -60,7 +64,7 @@ class DashboardController extends Controller
         $this->authorizeHost($request, $booking);
 
         return view('dashboard.booking', [
-            'booking' => $booking->load(['eventType', 'answers', 'rescheduledFrom', 'rescheduledTo']),
+            'booking' => $booking->load(['eventType.team', 'host', 'hosts', 'cancelledBy', 'answers', 'rescheduledFrom', 'rescheduledTo']),
             'timezone' => $request->user()->timezone,
         ]);
     }
@@ -71,7 +75,7 @@ class DashboardController extends Controller
         $validated = $request->validate(['reason' => ['nullable', 'string', 'max:1000']]);
 
         try {
-            $bookings->cancel($booking, 'host', $validated['reason'] ?? null);
+            $bookings->cancel($booking, 'host', $validated['reason'] ?? null, $request->user());
         } catch (BookingNotChangeableException) {
             return back()->with('error', __('This booking can no longer be cancelled.'));
         }
@@ -88,11 +92,11 @@ class DashboardController extends Controller
                 ->with('error', __('This booking can no longer be rescheduled.'));
         }
 
-        $eventType = $booking->eventType->load(['user', 'questions']);
+        $eventType = $booking->eventType->load(['user', 'team', 'hosts', 'questions']);
 
         return view('public.book', [
             'eventType' => $eventType,
-            'host' => $eventType->user,
+            'host' => $eventType->user, // null for team event types
             'config' => $this->calendarConfig($eventType, route('dashboard.bookings.reschedule.slots', $booking), $request->user()->timezone),
             'formAction' => route('dashboard.bookings.reschedule.store', $booking),
             'reschedule' => $booking,
@@ -115,7 +119,7 @@ class DashboardController extends Controller
         ]);
 
         try {
-            [$newBooking] = $bookings->reschedule($booking, CarbonImmutable::parse($validated['start']), by: 'host');
+            [$newBooking] = $bookings->reschedule($booking, CarbonImmutable::parse($validated['start']), by: 'host', actor: $request->user());
         } catch (BookingNotChangeableException) {
             return redirect()->route('dashboard.bookings.show', $booking)
                 ->with('error', __('This booking can no longer be rescheduled.'));
@@ -144,6 +148,16 @@ class DashboardController extends Controller
     private function authorizeHost(Request $request, Booking $booking): void
     {
         // 404 rather than 403 so other hosts' booking ids are not confirmed.
-        abort_unless($booking->host_id === $request->user()->id, 404);
+        abort_unless($booking->isAccessibleBy($request->user()), 404);
+    }
+
+    /**
+     * Bookings the user organizes or co-hosts.
+     *
+     * @return Builder<Booking>
+     */
+    private function attended(User $user): Builder
+    {
+        return Booking::query()->attendedBy($user->id);
     }
 }

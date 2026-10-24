@@ -22,5 +22,7 @@ class BookingRescheduled
         public Booking $booking,
         public string $manageToken,
         public string $by = 'guest',
+        // The host or team admin who moved it, when $by is 'host'.
+        public ?int $actorId = null,
     ) {}
 }

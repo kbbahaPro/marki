@@ -24,10 +24,11 @@ class SendChangeEmails
         if ($event instanceof BookingCancelled) {
             Mail::to($booking->guest_email, $booking->guest_name)->send(new BookingCancelledGuest($booking));
 
-            // A host who cancelled knows already; co-hosts still need telling.
-            // (Cancellations do not yet record which host cancelled, so the organizer is assumed.)
+            // Whoever cancelled knows already; the other hosts still need telling.
+            $actorId = $booking->cancelled_by === 'host' ? ($booking->cancelled_by_user_id ?? $booking->host_id) : null;
+
             foreach ($booking->hosts as $host) {
-                if ($booking->cancelled_by !== 'host' || $host->id !== $booking->host_id) {
+                if ($host->id !== $actorId) {
                     Mail::to($host)->send(new BookingCancelledHost($booking, $host));
                 }
             }
@@ -40,8 +41,10 @@ class SendChangeEmails
         Mail::to($booking->guest_email, $booking->guest_name)
             ->send(new BookingRescheduledGuest($previous, $booking, $event->manageToken, $event->by));
 
+        $actorId = $event->by === 'host' ? ($event->actorId ?? $booking->host_id) : null;
+
         foreach ($booking->hosts as $host) {
-            if ($event->by !== 'host' || $host->id !== $booking->host_id) {
+            if ($host->id !== $actorId) {
                 Mail::to($host)->send(new BookingRescheduledHost($previous, $booking, $host));
             }
         }

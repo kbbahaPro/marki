@@ -48,9 +48,14 @@
                             <p class="mt-0.5 text-sm text-ink-3">{{ __('Team event types') }}</p>
                         </div>
                         @if ($canManage)
-                            <a href="{{ route('teams.event-types.create', $team) }}" class="btn-secondary">
-                                <x-icon name="plus" class="h-4 w-4" /> {{ __('New team event type') }}
-                            </a>
+                            <div class="flex flex-wrap gap-2">
+                                <a href="{{ route('teams.bookings', $team) }}" class="btn-ghost">
+                                    <x-icon name="calendar" class="h-4 w-4" /> {{ __('Bookings') }}
+                                </a>
+                                <a href="{{ route('teams.event-types.create', $team) }}" class="btn-secondary">
+                                    <x-icon name="plus" class="h-4 w-4" /> {{ __('New team event type') }}
+                                </a>
+                            </div>
                         @endif
                     </div>
 

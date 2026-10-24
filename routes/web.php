@@ -11,6 +11,7 @@ use App\Http\Controllers\Public\BookingPageController;
 use App\Http\Controllers\Public\ManageBookingController;
 use App\Http\Controllers\Public\TeamPageController;
 use App\Http\Controllers\Settings\CalendarController;
+use App\Http\Controllers\TeamBookingController;
 use App\Http\Controllers\TeamEventTypeController;
 use App\Mail\BookingConfirmedGuest;
 use App\Mail\BookingConfirmedHost;
@@ -56,6 +57,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::resource('event-types', EventTypeController::class)
         ->except('show')
         ->parameters(['event-types' => 'eventType']);
+
+    Route::get('/teams/{team}/bookings', [TeamBookingController::class, 'index'])->name('teams.bookings');
 
     // Scoped: the event type must belong to the team in the URL.
     Route::resource('teams.event-types', TeamEventTypeController::class)

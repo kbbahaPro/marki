@@ -159,6 +159,14 @@ class Booking extends Model
     }
 
     /**
+     * The person who cancelled, when a host did (null for guests and older bookings).
+     */
+    public function cancelledBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'cancelled_by_user_id');
+    }
+
+    /**
      * Everyone hosting this booking, organizer first.
      */
     public function hosts(): BelongsToMany
@@ -167,6 +175,34 @@ class Booking extends Model
             ->withPivot('is_organizer')
             ->orderByDesc('booking_hosts.is_organizer')
             ->orderBy('users.name');
+    }
+
+    /**
+     * Who can see and change this booking in the app: its hosts, and for team
+     * bookings the team's admins and global admins. Personal bookings stay
+     * private to their host, even from admins.
+     */
+    public function isAccessibleBy(User $user): bool
+    {
+        if ($this->host_id === $user->id || $this->hosts->contains($user)) {
+            return true;
+        }
+
+        $team = $this->eventType->team;
+
+        return $team !== null && $team->isManagedBy($user);
+    }
+
+    /**
+     * How a host-side cancellation reads to $viewer: "you", a name, or just "host".
+     */
+    public function cancelledByLabel(User $viewer): string
+    {
+        return match (true) {
+            $this->cancelled_by !== 'host' => __('Cancelled by guest'),
+            ($this->cancelled_by_user_id ?? $this->host_id) === $viewer->id => __('Cancelled by you'),
+            default => __('Cancelled by :name', ['name' => $this->cancelledBy?->name ?? $this->host->name]),
+        };
     }
 
     /**

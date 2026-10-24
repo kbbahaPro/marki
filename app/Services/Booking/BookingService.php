@@ -91,12 +91,13 @@ class BookingService
      * Team bookings keep their hosts when they are free at the new time.
      *
      * @param  'guest'|'host'  $by
+     * @param  User|null  $actor  The host or team admin who moved it, when $by is 'host'.
      * @return array{0: Booking, 1: string} The new booking and its raw manage token.
      *
      * @throws SlotUnavailableException
      * @throws BookingNotChangeableException
      */
-    public function reschedule(Booking $previous, CarbonImmutable $start, ?CarbonImmutable $now = null, string $by = 'guest'): array
+    public function reschedule(Booking $previous, CarbonImmutable $start, ?CarbonImmutable $now = null, string $by = 'guest', ?User $actor = null): array
     {
         $start = $start->utc();
         $eventType = $previous->eventType;
@@ -150,19 +151,20 @@ class BookingService
             return $booking;
         });
 
-        BookingRescheduled::dispatch($previous->fresh(), $booking, $token, $by);
+        BookingRescheduled::dispatch($previous->fresh(), $booking, $token, $by, $actor?->id);
 
         return [$booking, $token];
     }
 
     /**
      * @param  'guest'|'host'  $by
+     * @param  User|null  $actor  The host or team admin who cancelled, when $by is 'host'.
      *
      * @throws BookingNotChangeableException
      */
-    public function cancel(Booking $booking, string $by, ?string $reason = null): Booking
+    public function cancel(Booking $booking, string $by, ?string $reason = null, ?User $actor = null): Booking
     {
-        $booking = DB::transaction(function () use ($booking, $by, $reason) {
+        $booking = DB::transaction(function () use ($booking, $by, $reason, $actor) {
             $booking = Booking::query()->whereKey($booking->id)->lockForUpdate()->first();
 
             if (! $booking->isChangeable()) {
@@ -172,6 +174,7 @@ class BookingService
             $booking->forceFill([
                 'status' => BookingStatus::Cancelled,
                 'cancelled_by' => $by,
+                'cancelled_by_user_id' => $by === 'host' ? $actor?->id : null,
                 'cancel_reason' => filled($reason) ? $reason : null,
                 'cancelled_at' => now(),
                 'ical_sequence' => $booking->ical_sequence + 1,

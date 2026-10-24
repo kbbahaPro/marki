@@ -3,7 +3,9 @@
 namespace Database\Factories;
 
 use App\Enums\LocationType;
+use App\Enums\SchedulingType;
 use App\Models\EventType;
+use App\Models\Team;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -36,5 +38,17 @@ class EventTypeFactory extends Factory
             'reminder_offsets' => [1440, 60],
             'is_active' => true,
         ];
+    }
+
+    /**
+     * A team event type; add hosts with hasAttached() or hosts()->attach().
+     */
+    public function forTeam(Team $team, SchedulingType $type = SchedulingType::RoundRobin): static
+    {
+        return $this->state([
+            'user_id' => null,
+            'team_id' => $team->id,
+            'scheduling_type' => $type,
+        ]);
     }
 }

@@ -125,12 +125,17 @@
                     <section class="card p-5 sm:p-6">
                         <h2 class="section-title">{{ __('Delete team') }}</h2>
                         <p class="mt-1 muted">{{ __('Members keep their accounts; only the team is removed.') }}</p>
-                        <form method="post" action="{{ route('admin.teams.destroy', $team) }}" class="mt-4"
-                              onsubmit="return confirm(@js(__('Delete the team :team?', ['team' => $team->name])))">
-                            @csrf
-                            @method('delete')
-                            <x-danger-button>{{ __('Delete team') }}</x-danger-button>
-                        </form>
+                        @if ($blocker = $team->deletionBlocker())
+                            <p class="mt-4 text-sm text-ink-2">{{ $blocker }}</p>
+                        @else
+                            <form method="post" action="{{ route('admin.teams.destroy', $team) }}" class="mt-4"
+                                  onsubmit="return confirm(@js(__('Delete the team :team?', ['team' => $team->name])))">
+                                @csrf
+                                @method('delete')
+                                <x-danger-button>{{ __('Delete team') }}</x-danger-button>
+                            </form>
+                        @endif
+                        <x-input-error class="mt-2" :messages="$errors->get('team')" />
                     </section>
                 </aside>
             </div>

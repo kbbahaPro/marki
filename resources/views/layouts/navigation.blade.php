@@ -36,7 +36,7 @@
                 <x-slot name="trigger">
                     <button class="flex items-center gap-2 rounded-full py-1 pe-3 ps-1 text-sm font-medium text-ink-2 transition-colors hover:bg-surface-2 hover:text-ink" aria-haspopup="menu">
                         <x-avatar :user="$user" size="sm" decorative />
-                        <span class="max-w-[10rem] truncate">{{ $user->name }}</span>
+                        <span class="sr-only xl:not-sr-only xl:max-w-[10rem] xl:truncate">{{ $user->name }}</span>
                         <x-icon name="chevron-down" class="h-4 w-4" />
                     </button>
                 </x-slot>

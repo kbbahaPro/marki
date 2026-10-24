@@ -1,16 +1,25 @@
+@php
+    $team ??= null;
+@endphp
+
 <x-app-layout :title="$eventType->title">
     <x-slot name="header">
         <div class="flex items-center justify-between gap-4">
-            <h1 class="page-title">
-                {{ $eventType->title }}
-            </h1>
+            <div>
+                <h1 class="page-title">
+                    {{ $eventType->title }}
+                </h1>
+                @if ($team)
+                    <p class="mt-1 muted">{{ __(':type event for :team', ['type' => $eventType->scheduling_type->label(), 'team' => $team->name]) }}</p>
+                @endif
+            </div>
             <a href="{{ route('event-types.index') }}" class="text-sm text-ink-2 hover:text-ink">{{ __('All event types') }}</a>
         </div>
     </x-slot>
 
     <div class="pb-16 pt-6">
         <div class="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 space-y-6">
-            <form method="post" action="{{ route('event-types.update', $eventType) }}">
+            <form method="post" action="{{ $team ? route('teams.event-types.update', [$team, $eventType]) : route('event-types.update', $eventType) }}">
                 @method('put')
                 @include('event-types.partials.form')
 
@@ -25,7 +34,7 @@
             </form>
 
             <div class="card p-5 sm:p-8">
-                <form method="post" action="{{ route('event-types.destroy', $eventType) }}"
+                <form method="post" action="{{ $team ? route('teams.event-types.destroy', [$team, $eventType]) : route('event-types.destroy', $eventType) }}"
                       onsubmit="return confirm(@js(__('Delete this event type? Its booking link will stop working.')))">
                     @csrf
                     @method('delete')

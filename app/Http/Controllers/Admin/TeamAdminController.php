@@ -4,10 +4,12 @@ namespace App\Http\Controllers\Admin;
 
 use App\Enums\TeamRole;
 use App\Http\Controllers\Controller;
+use App\Models\EventTypeHost;
 use App\Models\Team;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
@@ -53,7 +55,15 @@ class TeamAdminController extends Controller
 
     public function destroy(Team $team): RedirectResponse
     {
-        $team->delete();
+        if ($reason = $team->deletionBlocker()) {
+            return back()->withErrors(['team' => $reason]);
+        }
+
+        DB::transaction(function () use ($team) {
+            // Only deleted event types without bookings are left; they still hold the foreign key.
+            $team->eventTypes()->onlyTrashed()->get()->each->forceDelete();
+            $team->delete();
+        });
 
         return redirect()->route('admin.teams.index')->with('status', 'team-deleted');
     }
@@ -83,7 +93,15 @@ class TeamAdminController extends Controller
     public function removeMember(Team $team, User $user): RedirectResponse
     {
         abort_unless($team->hasMember($user), 404);
-        $team->members()->detach($user->id);
+
+        DB::transaction(function () use ($team, $user) {
+            $team->members()->detach($user->id);
+            // Someone who leaves the team stops hosting its event types.
+            EventTypeHost::query()
+                ->where('user_id', $user->id)
+                ->whereIn('event_type_id', $team->eventTypes()->withTrashed()->select('id'))
+                ->delete();
+        });
 
         return back()->with('status', 'member-removed');
     }

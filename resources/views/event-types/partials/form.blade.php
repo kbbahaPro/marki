@@ -3,6 +3,8 @@
     use App\Enums\QuestionType;
     use Carbon\CarbonInterval;
 
+    $team ??= null;
+
     // Re-render from old input after a failed submit (title is always posted).
     $hasOldInput = old('title') !== null;
 
@@ -21,6 +23,27 @@
     // Show minimum notice in the largest whole unit.
     $notice = (int) old('min_notice_minutes', $eventType->min_notice_minutes);
     $noticeUnit = $notice > 0 && $notice % 1440 === 0 ? 1440 : ($notice > 0 && $notice % 60 === 0 ? 60 : 1);
+
+    $urlPrefix = $team ? url('team/'.$team->slug) : url(auth()->user()->username);
+
+    // Team event types: one row per member, selected if they host (new event types start with everyone).
+    if ($team) {
+        $schedulingType = old('scheduling_type', $eventType->scheduling_type?->value);
+        $submitted = $hasOldInput ? collect(old('hosts', []))->keyBy('user_id') : null;
+        $current = $eventType->exists ? $eventType->hosts->keyBy('id') : null;
+
+        $hostRows = $team->members->map(function ($member) use ($submitted, $current) {
+            if ($submitted !== null) {
+                $host = $submitted->get($member->id);
+
+                return [$member, $host !== null, (bool) ($host['is_fixed'] ?? false), (int) ($host['priority'] ?? 2), (int) ($host['weight'] ?? 100)];
+            }
+
+            $pivot = $current?->get($member->id)?->pivot;
+
+            return [$member, $current === null || $pivot !== null, (bool) $pivot?->is_fixed, $pivot->priority ?? 2, $pivot->weight ?? 100];
+        });
+    }
 @endphp
 
 @csrf
@@ -51,7 +74,7 @@
             <div>
                 <x-input-label for="slug" :value="__('URL')" />
                 <div class="mt-1.5 flex overflow-hidden rounded-xl border border-line bg-surface focus-within:border-primary focus-within:ring-1 focus-within:ring-primary">
-                    <span class="hidden items-center border-r border-line bg-surface-2 px-3 text-sm text-ink-3 sm:inline-flex">{{ preg_replace('#^https?://#', '', url(auth()->user()->username)) }}/</span>
+                    <span class="hidden items-center border-r border-line bg-surface-2 px-3 text-sm text-ink-3 sm:inline-flex">{{ preg_replace('#^https?://#', '', $urlPrefix) }}/</span>
                     <input id="slug" name="slug" type="text" x-model="slug" @input="slugTouched = true" required
                            class="block w-full min-w-0 flex-1 border-0 bg-transparent text-ink focus:ring-0">
                 </div>
@@ -85,7 +108,9 @@
                         <option value="{{ $type->value }}">{{ $type->label() }}</option>
                     @endforeach
                 </select>
-                @if (auth()->user()->googleConnection?->isActive())
+                @if ($team)
+                    <p class="mt-1 text-xs text-ink-3" x-show="locationType === 'google_meet'">{{ __('The Meet link is created in the calendar of the host who gets the booking.') }}</p>
+                @elseif (auth()->user()->googleConnection?->isActive())
                     <p class="mt-1 text-xs text-ink-3" x-show="locationType === 'google_meet'">{{ __('A Meet link is created for each booking.') }}</p>
                 @else
                     <p class="mt-1 text-xs text-warning" x-show="locationType === 'google_meet'">
@@ -107,6 +132,10 @@
             </label>
         </div>
     </div>
+
+    @if ($team)
+        @include('event-types.partials.hosts')
+    @endif
 
     {{-- Limits --}}
     <div class="card p-5 sm:p-8">
@@ -149,6 +178,9 @@
                 <div>
                     <x-input-label for="daily_limit" :value="__('Max bookings per day')" />
                     <x-text-input id="daily_limit" name="daily_limit" type="number" min="1" max="100" class="mt-1 block w-full" :value="old('daily_limit', $eventType->daily_limit)" :placeholder="__('No limit')" />
+                    @if ($team)
+                        <p class="mt-1 text-xs text-ink-3">{{ __('Applies to each host separately.') }}</p>
+                    @endif
                     <x-input-error class="mt-2" :messages="$errors->get('daily_limit')" />
                 </div>
             </div>

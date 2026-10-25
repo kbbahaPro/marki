@@ -1,4 +1,5 @@
 @php
+    use App\Enums\BookingStatus;
     use App\Enums\SyncStatus;
     use Illuminate\Support\Carbon;
 @endphp
@@ -26,7 +27,9 @@
                     <span class="hidden shrink-0 items-center gap-2 sm:flex">
                         @if ($tab === 'cancelled')
                             <span class="pill-neutral">{{ $booking->cancelledByLabel(auth()->user()) }}</span>
-                        @elseif ($booking->sync_status === SyncStatus::Failed)
+                        @elseif ($booking->status === BookingStatus::NoShow)
+                            <span class="pill-danger">{{ __('No-show') }}</span>
+                        @elseif ($booking->sync_status === SyncStatus::Failed && $booking->status === BookingStatus::Confirmed)
                             <span class="pill-danger">{{ __('Not in calendar') }}</span>
                         @endif
                         @if ($booking->rescheduled_from_id && $tab !== 'cancelled')

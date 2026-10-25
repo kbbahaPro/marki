@@ -192,7 +192,7 @@ class DashboardTest extends TestCase
     {
         $booking = $this->booking('2026-11-04 09:00');
 
-        $this->actingAs($this->host)->get("/dashboard/bookings/{$booking->uid}")->assertSee('Completed')->assertDontSee('Cancel booking');
+        $this->actingAs($this->host)->get("/dashboard/bookings/{$booking->uid}")->assertSee('Ended')->assertDontSee('Cancel booking');
         $this->actingAs($this->host)->post("/dashboard/bookings/{$booking->uid}/cancel")->assertSessionHas('error');
     }
 

@@ -36,6 +36,18 @@ return [
         'freebusy_cache_seconds' => (int) env('GOOGLE_FREEBUSY_CACHE_SECONDS', 180),
     ],
 
+    // Optional CRM integration (see DEPLOYMENT.md → "Connect a CRM"). Booking
+    // webhooks are sent only when the install id, URL and secret are all set;
+    // the "existing customer" lookup only when the API URL and key are set.
+    'crm' => [
+        'install_id' => env('MARKI_INSTALL_ID'),
+        'webhook_url' => env('CRM_WEBHOOK_URL'),
+        'webhook_secret' => env('CRM_WEBHOOK_SECRET'),
+        'api_url' => env('CRM_API_URL'),
+        'api_key' => env('CRM_API_KEY'),
+        'lookup_cache_seconds' => (int) env('CRM_LOOKUP_CACHE_SECONDS', 600),
+    ],
+
     'slack' => [
         'notifications' => [
             'bot_user_oauth_token' => env('SLACK_BOT_USER_OAUTH_TOKEN'),

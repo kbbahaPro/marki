@@ -4,8 +4,10 @@ namespace App\Providers;
 
 use App\Events\BookingCancelled;
 use App\Events\BookingCreated;
+use App\Events\BookingOutcomeRecorded;
 use App\Events\BookingRescheduled;
 use App\Listeners\CreateCalendarEvent;
+use App\Listeners\QueueCrmWebhook;
 use App\Listeners\ScheduleReminders;
 use App\Listeners\SendBookingConfirmations;
 use App\Listeners\SendChangeEmails;
@@ -59,6 +61,9 @@ class AppServiceProvider extends ServiceProvider
         Event::listen([BookingCancelled::class, BookingRescheduled::class], SendChangeEmails::class);
 
         Event::listen([BookingCreated::class, BookingRescheduled::class, BookingCancelled::class], ScheduleReminders::class);
+
+        // After the calendar listeners, so the payload carries the Meet link.
+        Event::listen([BookingCreated::class, BookingRescheduled::class, BookingCancelled::class, BookingOutcomeRecorded::class], QueueCrmWebhook::class);
 
         // Emails use inline styles, so they get the (contrast-safe) brand colour as a value.
         View::composer('emails.*', fn ($view) => $view->with('brandPrimary', BrandPalette::fromConfig()->primaryHex()));

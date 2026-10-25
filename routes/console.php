@@ -18,6 +18,11 @@ Schedule::command('bookings:send-reminders')
     ->everyMinute()
     ->withoutOverlapping(5);
 
+// Mark meetings that ended a while ago as completed (queues CRM webhooks when configured).
+Schedule::command('bookings:complete')
+    ->everyFiveMinutes()
+    ->withoutOverlapping(5);
+
 // Work through the database queue (emails, calendar retries) for up to ~50 s,
 // so it finishes before the next minute's run starts. The lock expires after
 // 5 minutes in case the host kills the process mid-run.

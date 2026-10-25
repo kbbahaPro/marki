@@ -5,7 +5,7 @@
     $tz = $booking->guest_timezone;
     $start = $booking->start_at->setTimezone($tz);
     $end = $booking->end_at->setTimezone($tz);
-    $confirmed = $booking->status === BookingStatus::Confirmed;
+    $confirmed = $booking->status->isKept();
 @endphp
 
 <x-public-layout :title="$confirmed ? __('Booking confirmed') : __('Booking cancelled')">

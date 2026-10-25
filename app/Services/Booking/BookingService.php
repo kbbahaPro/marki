@@ -7,6 +7,7 @@ use App\Enums\SchedulingType;
 use App\Enums\SyncStatus;
 use App\Events\BookingCancelled;
 use App\Events\BookingCreated;
+use App\Events\BookingOutcomeRecorded;
 use App\Events\BookingRescheduled;
 use App\Exceptions\BookingNotChangeableException;
 use App\Exceptions\CalendarUnavailableException;
@@ -21,6 +22,7 @@ use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use InvalidArgumentException;
 
 /**
  * Creates, cancels and reschedules bookings without double-booking a host.
@@ -186,6 +188,50 @@ class BookingService
         BookingCancelled::dispatch($booking);
 
         return $booking;
+    }
+
+    /**
+     * Record how a meeting went: completed or no-show. Allowed once it has
+     * started, and switchable between the two to correct a mistake.
+     *
+     * @param  bool  $onlyIfConfirmed  Leave bookings a host already marked alone (automatic completion).
+     * @return bool Whether the status changed.
+     *
+     * @throws BookingNotChangeableException
+     */
+    public function recordOutcome(Booking $booking, BookingStatus $outcome, bool $onlyIfConfirmed = false): bool
+    {
+        if (! in_array($outcome, [BookingStatus::Completed, BookingStatus::NoShow], true)) {
+            throw new InvalidArgumentException("Not an outcome: {$outcome->value}");
+        }
+
+        $changed = DB::transaction(function () use ($booking, $outcome, $onlyIfConfirmed) {
+            $booking = Booking::query()->whereKey($booking->id)->lockForUpdate()->first();
+
+            if ($onlyIfConfirmed && $booking->status !== BookingStatus::Confirmed) {
+                return null;
+            }
+
+            if (! $booking->canRecordOutcome()) {
+                throw new BookingNotChangeableException;
+            }
+
+            if ($booking->status === $outcome) {
+                return null;
+            }
+
+            $booking->forceFill(['status' => $outcome])->save();
+
+            return $booking;
+        });
+
+        if ($changed === null) {
+            return false;
+        }
+
+        BookingOutcomeRecorded::dispatch($changed);
+
+        return true;
     }
 
     /**

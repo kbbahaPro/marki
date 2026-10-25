@@ -33,6 +33,7 @@ Route::middleware(['auth', 'verified'])->prefix('dashboard')->group(function () 
         Route::get('/reschedule', [DashboardController::class, 'editTime'])->name('reschedule');
         Route::get('/reschedule/slots', [DashboardController::class, 'slots'])->name('reschedule.slots');
         Route::post('/reschedule', [DashboardController::class, 'reschedule'])->name('reschedule.store');
+        Route::post('/outcome', [DashboardController::class, 'recordOutcome'])->name('outcome');
         Route::post('/sync', [DashboardController::class, 'retrySync'])->middleware('throttle:10,1')->name('sync');
     });
 });

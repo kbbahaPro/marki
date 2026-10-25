@@ -127,6 +127,22 @@ class Booking extends Model
     }
 
     /**
+     * Bookings that are on or were held: not cancelled or moved.
+     */
+    public function scopeKept(Builder $query): void
+    {
+        $query->whereIn('status', BookingStatus::kept());
+    }
+
+    /**
+     * Whether a host can mark it completed or no-show: it has started and was not cancelled or moved.
+     */
+    public function canRecordOutcome(): bool
+    {
+        return $this->status->isKept() && ! $this->start_at->isFuture();
+    }
+
+    /**
      * Bookings a user attends, as organizer or co-host.
      */
     public function scopeAttendedBy(Builder $query, int $userId): void

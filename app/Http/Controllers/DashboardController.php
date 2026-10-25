@@ -39,7 +39,7 @@ class DashboardController extends Controller
 
         match ($tab) {
             'upcoming' => $query->confirmed()->where('end_at', '>', now())->orderBy('start_at'),
-            'past' => $query->confirmed()->where('end_at', '<=', now())->orderByDesc('start_at'),
+            'past' => $query->kept()->where('end_at', '<=', now())->orderByDesc('start_at'),
             'cancelled' => $query->where('status', BookingStatus::Cancelled)->orderByDesc('start_at'),
         };
 
@@ -65,8 +65,7 @@ class DashboardController extends Controller
 
         return view('dashboard.booking', [
             'booking' => $booking->load(['eventType.team', 'host', 'hosts', 'cancelledBy', 'answers', 'rescheduledFrom', 'rescheduledTo']),
-            'timezone' => $request->user()->timezone,
-        ]);
+            'timezone' => $request->user()->timezone,        ]);
     }
 
     public function cancel(Request $request, BookingService $bookings, Booking $booking): RedirectResponse
@@ -129,6 +128,25 @@ class DashboardController extends Controller
         }
 
         return redirect()->route('dashboard.bookings.show', $newBooking)->with('status', 'booking-rescheduled');
+    }
+
+    /**
+     * Mark a meeting that has started as completed or as a no-show.
+     */
+    public function recordOutcome(Request $request, BookingService $bookings, Booking $booking): RedirectResponse
+    {
+        $this->authorizeHost($request, $booking);
+        $validated = $request->validate(['outcome' => ['required', 'in:completed,no_show']]);
+        $outcome = BookingStatus::from($validated['outcome']);
+
+        try {
+            $bookings->recordOutcome($booking, $outcome);
+        } catch (BookingNotChangeableException) {
+            return back()->with('error', __('This booking cannot be marked yet.'));
+        }
+
+        return redirect()->route('dashboard.bookings.show', $booking)
+            ->with('status', $outcome === BookingStatus::NoShow ? 'booking-no-show' : 'booking-completed');
     }
 
     /**

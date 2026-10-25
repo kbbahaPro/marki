@@ -1,0 +1,61 @@
+{
+    "id": "01JD7Q0000000000000000CNCL",
+    "type": "booking.cancelled",
+    "version": 1,
+    "occurred_at": "2026-10-25T14:00:00+00:00",
+    "organization_id": "01JC00000000000000INSTALL0",
+    "booking": {
+        "id": "01JD7P0000000000000BOOKNG2",
+        "previous_booking_id": null,
+        "status": "cancelled",
+        "start_at": "2026-10-29T09:00:00+00:00",
+        "end_at": "2026-10-29T09:30:00+00:00",
+        "timezone": "Africa/Tunis",
+        "location": {
+            "type": "google_meet",
+            "value": null,
+            "url": "https://meet.google.com/abc-defg-hij"
+        },
+        "manage_url": null,
+        "event_type": {
+            "id": 12,
+            "slug": "intro",
+            "name": "Intro call",
+            "kind": "personal",
+            "team_slug": null
+        },
+        "organizer_email": "host@example.com",
+        "hosts": [
+            {
+                "email": "host@example.com",
+                "name": "Host Person",
+                "is_organizer": true
+            }
+        ],
+        "invitee": {
+            "name": "Jane Doe",
+            "email": "jane.doe@acme.example",
+            "phone": "+216 71 234 567",
+            "notes": "Looking forward to it."
+        },
+        "answers": [
+            {
+                "question_id": 41,
+                "label": "Company size",
+                "type": "select",
+                "value": "11-50"
+            },
+            {
+                "question_id": 42,
+                "label": "Your role",
+                "type": "text",
+                "value": "Head of Sales"
+            }
+        ],
+        "cancellation": {
+            "reason": "Something came up.",
+            "cancelled_by": "guest",
+            "cancelled_at": "2026-10-25T14:00:00+00:00"
+        }
+    }
+}

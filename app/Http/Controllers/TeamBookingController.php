@@ -30,7 +30,7 @@ class TeamBookingController extends Controller
 
         match ($tab) {
             'upcoming' => $query->confirmed()->where('end_at', '>', now())->orderBy('start_at'),
-            'past' => $query->confirmed()->where('end_at', '<=', now())->orderByDesc('start_at'),
+            'past' => $query->kept()->where('end_at', '<=', now())->orderByDesc('start_at'),
             'cancelled' => $query->where('status', BookingStatus::Cancelled)->orderByDesc('start_at'),
         };
 

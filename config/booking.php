@@ -57,6 +57,10 @@ return [
         'reminder_offsets' => [1440, 60],
     ],
 
+    // Confirmed bookings become "completed" this long after they end, unless
+    // a host marked them first. Hosts can still switch to "no-show" later.
+    'auto_complete_after_minutes' => (int) env('BOOKING_AUTO_COMPLETE_AFTER_MINUTES', 60),
+
     'invitations' => [
         'expire_days' => (int) env('INVITATION_EXPIRE_DAYS', 7),
     ],

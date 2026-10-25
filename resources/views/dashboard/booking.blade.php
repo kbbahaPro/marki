@@ -44,6 +44,12 @@
                 @case('booking-rescheduled')
                     <div class="alert-success">{{ __('Booking moved. :guest has been emailed the new time.', ['guest' => $booking->guest_name]) }}</div>
                     @break
+                @case('booking-completed')
+                    <div class="alert-success">{{ __('Marked as completed.') }}</div>
+                    @break
+                @case('booking-no-show')
+                    <div class="alert-info">{{ __('Marked as a no-show.') }}</div>
+                    @break
                 @case('sync-queued')
                     <div class="alert-info">{{ __('Trying again to add it to your calendar. This can take a minute.') }}</div>
                     @break
@@ -53,7 +59,7 @@
                 <div class="flex flex-wrap items-center gap-2">
                     @switch($booking->status)
                         @case(BookingStatus::Confirmed)
-                            <span class="pill-success">{{ $booking->end_at->isPast() ? __('Completed') : __('Confirmed') }}</span>
+                            <span class="pill-success">{{ $booking->end_at->isPast() ? __('Ended') : __('Confirmed') }}</span>
                             @break
                         @case(BookingStatus::Cancelled)
                             <span class="pill-neutral">{{ $booking->cancelledByLabel($viewer) }}</span>
@@ -61,7 +67,27 @@
                         @case(BookingStatus::Rescheduled)
                             <span class="pill-primary">{{ __('Moved to a new time') }}</span>
                             @break
+                        @case(BookingStatus::Completed)
+                            <span class="pill-success">{{ __('Completed') }}</span>
+                            @break
+                        @case(BookingStatus::NoShow)
+                            <span class="pill-danger">{{ __('No-show') }}</span>
+                            @break
                     @endswitch
+
+                    @if ($booking->canRecordOutcome())
+                        {{-- Correctable: hosts can switch between the two outcomes. --}}
+                        <span class="ms-auto flex flex-wrap gap-2">
+                            @foreach ([BookingStatus::Completed->value => __('Mark as completed'), BookingStatus::NoShow->value => __('Mark as no-show')] as $outcome => $label)
+                                @continue($booking->status->value === $outcome)
+                                <form method="post" action="{{ route('dashboard.bookings.outcome', $booking) }}">
+                                    @csrf
+                                    <input type="hidden" name="outcome" value="{{ $outcome }}">
+                                    <button class="btn-secondary min-h-0 py-1.5 text-sm">{{ $label }}</button>
+                                </form>
+                            @endforeach
+                        </span>
+                    @endif
                 </div>
 
                 <dl class="mt-6 grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-[9rem_1fr] text-sm">

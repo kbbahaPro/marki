@@ -15,4 +15,12 @@ class BookingAnswer extends Model
     {
         return $this->belongsTo(Booking::class);
     }
+
+    /**
+     * The question as it is now (null once it was removed from the event type).
+     */
+    public function question(): BelongsTo
+    {
+        return $this->belongsTo(EventTypeQuestion::class, 'question_id');
+    }
 }

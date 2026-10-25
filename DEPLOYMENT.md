@@ -189,6 +189,13 @@ GOOGLE_REDIRECT_URI="${APP_URL}/settings/calendar/google/callback"
 BRAND_WORDMARK=marki
 BRAND_SUPPORT_EMAIL=
 DEFAULT_HOST_TIMEZONE=Europe/Paris   # pre-selected for new team members
+
+# CRM integration (optional): see §11
+MARKI_INSTALL_ID=
+CRM_WEBHOOK_URL=
+CRM_WEBHOOK_SECRET=
+CRM_API_URL=
+CRM_API_KEY=
 ```
 
 > **Protect `APP_KEY`.** It encrypts stored Google tokens and the guests' private cancel/reschedule links. If it changes, every host must reconnect Google Calendar and existing guest links stop working in reminder emails. Keep a copy of `.env` in your password manager, and never run `key:generate` again on a live site.
@@ -297,7 +304,8 @@ Use the PHP path that reports 8.4 (§1) and your real home directory (`echo $HOM
 Every minute the scheduler:
 
 - queues reminder emails that are due (each one is claimed atomically, so it is never sent twice),
-- works the database queue for up to ~50 seconds (confirmations, cancellations, calendar retries), and never runs two workers at once,
+- every 5 minutes, marks meetings that ended over an hour ago as completed,
+- works the database queue for up to ~50 seconds (confirmations, cancellations, calendar retries, CRM webhooks), and never runs two workers at once,
 - once a day, prunes failed jobs older than 30 days.
 
 **Check that it runs.** After a couple of minutes:
@@ -312,7 +320,48 @@ A quick end-to-end check is to book a test meeting on your own page: the confirm
 
 ---
 
-## 11. Go-live checklist
+## 11. Connect a CRM (optional)
+
+Marki can tell a CRM about every booking through signed webhooks, and show hosts whether a guest is already a customer. It follows the CRM webhook contract v1: requests are `POST`ed as JSON with `X-Marki-Event`, `X-Marki-Delivery`, `X-Marki-Timestamp` and `X-Marki-Signature: v1=<hex HMAC-SHA256 of "{timestamp}.{body}">`. Sample bodies are in [`tests/Fixtures/crm-webhooks/`](tests/Fixtures/crm-webhooks/). Everything stays off until the keys below are set.
+
+**Events.** `booking.created`, `booking.rescheduled` (with `previous_booking_id`), `booking.cancelled`, `booking.no_show` (a host clicks **Mark as no-show** on the booking) and `booking.completed` (a host clicks **Mark as completed**, or automatically `BOOKING_AUTO_COMPLETE_AFTER_MINUTES` after the meeting ends; default 60). Each event carries the whole booking; the guest's private manage link is never sent.
+
+**1. Install ID.** Generate one and keep it for the life of this install (changing it disconnects you from the CRM):
+
+```bash
+php artisan crm:install-id      # prints MARKI_INSTALL_ID=01J…; it does not edit .env
+```
+
+**2. In the CRM**, open **Settings → Calendar integration**, enter that install ID and save. The CRM shows the webhook secret **once**; copy it. Optionally, in **Settings → API keys**, create a key with only the `lookup` ability.
+
+**3. In `.env`:**
+
+```dotenv
+MARKI_INSTALL_ID=01J…                                                    # from step 1
+CRM_WEBHOOK_URL=https://crm.example.com/api/v1/integrations/calendar/webhook
+CRM_WEBHOOK_SECRET="secret-shown-once-by-the-crm"
+# Optional "existing customer" badge on hosts' booking pages:
+CRM_API_URL=https://crm.example.com
+CRM_API_KEY="crm_…"                                                      # a key with only the lookup ability
+```
+
+Then `php artisan optimize:clear && php artisan optimize`.
+
+**How delivery works.** Webhooks go through the database queue, so the cron job (§10) sends them within about a minute. Each attempt is signed with a fresh timestamp and times out after 10 seconds. Failures are retried after 1 min, 5 min, 30 min, 2 h and 6 h; a request the CRM rejects as invalid (`400 invalid_payload` or `401`) is not retried and is logged as an error. Events that gave up are listed by `php artisan queue:failed` and can be resent with `php artisan queue:retry all`. The CRM ignores repeats, so retrying is always safe.
+
+**Clocks.** The CRM rejects requests whose timestamp is more than 5 minutes off its own clock. Hostinger servers keep NTP time; if you host the CRM elsewhere, keep it on NTP too.
+
+**Secret rotation.** **Rotate secret** in the CRM keeps the old secret valid for 24 hours: put the new one in `CRM_WEBHOOK_SECRET` and run `php artisan optimize` within that window.
+
+**The lookup** is called when a host opens a booking, with a 3-second timeout. Answers are cached for 10 minutes (`CRM_LOOKUP_CACHE_SECONDS`); if the CRM is unreachable the badge is simply not shown.
+
+**Check it.** Book a test meeting, wait a minute, and open **Settings → Calendar integration → Recent webhook events** in the CRM: the event should show as processed. If not, check `php artisan queue:failed` and `storage/logs/`.
+
+> Bookings made before you connected are not sent. Only changes from then on are.
+
+---
+
+## 12. Go-live checklist
 
 - [ ] `https://book.example.com/up` returns 200 and HTTP redirects to HTTPS.
 - [ ] `APP_ENV=production`, `APP_DEBUG=false`, and `.env` is not reachable (`https://book.example.com/.env` → 404).
@@ -320,12 +369,13 @@ A quick end-to-end check is to book a test meeting on your own page: the confirm
 - [ ] A host connects Google Calendar; busy times disappear from their booking page.
 - [ ] A test booking creates a Google event with a Meet link and two emails (guest and host) with the invite.
 - [ ] Cancelling from the guest's email link removes the Google event and sends cancellation emails.
+- [ ] If a CRM is connected (§11), the test booking shows as a processed event in the CRM.
 - [ ] `php artisan queue:failed` is empty after the tests.
 - [ ] Hostinger backups are on (hPanel → **Files → Backups**), and `.env` (with `APP_KEY`) is saved in a password manager.
 
 ---
 
-## 12. Updating to a new version
+## 13. Updating to a new version
 
 ```bash
 cd ~/apps/marki
@@ -342,7 +392,7 @@ The queue worker restarts by itself every minute, so it picks up new code automa
 
 ---
 
-## 13. Backups
+## 14. Backups
 
 What must be backed up:
 
@@ -356,7 +406,7 @@ Hostinger's automatic backups cover files and databases; also download a databas
 
 ---
 
-## 14. Troubleshooting
+## 15. Troubleshooting
 
 | Symptom | Likely cause and fix |
 |---------|----------------------|
@@ -373,4 +423,5 @@ Hostinger's automatic backups cover files and databases; also download a databas
 | **Booking page shows no times** | Check the host has weekly hours, the event type is on, and Google is connected and active (see the dashboard warnings). |
 | **Links in emails use `http://` or the wrong host** | `APP_URL` is wrong. If you enabled a CDN/proxy in front of the site, also trust it in `bootstrap/app.php`: `$middleware->trustProxies(at: '*');` |
 | **Profile photos 404** | Run `php artisan storage:link` (§7). |
+| **CRM shows no booking events** | Check all three of `MARKI_INSTALL_ID`, `CRM_WEBHOOK_URL` and `CRM_WEBHOOK_SECRET` are set (a partial setup sends nothing and logs a warning), then `php artisan queue:failed` and the log. `invalid_signature` means the secret or install ID doesn't match the CRM's; `stale_timestamp` means a server clock is off. |
 | **Upload rejected for large photos** | The app accepts up to 4 MB; also check `upload_max_filesize`/`post_max_size` in hPanel's PHP configuration (≥ 8M). |

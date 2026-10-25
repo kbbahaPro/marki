@@ -26,6 +26,13 @@ It is built to run on **inexpensive shared hosting**: plain PHP and MySQL, no Do
 - **Google Calendar sync**: busy times hide slots, bookings create events with Meet links, and cancellations and reschedules update them.
 - Dashboard with upcoming, past and cancelled bookings; host-side cancel and reschedule.
 - Profile photo, job title and company shown on booking pages.
+- Mark past meetings as **completed** or **no-show** (meetings complete automatically an hour after they end).
+
+**CRM integration (optional)**
+- Signed booking webhooks (`booking.created`, `rescheduled`, `cancelled`, `no_show`, `completed`) to a CRM, retried with backoff from the database queue.
+- An "existing customer" badge with the contact's owner and open deals on a host's booking page.
+- Booking links accept `?name=&email=` to prefill the form, for "Book a meeting" buttons in a CRM.
+- Off unless configured; see [DEPLOYMENT.md §11](DEPLOYMENT.md#11-connect-a-crm-optional).
 
 **For admins**
 - Invite-only team: admins send invitations, and there is no public sign-up.
@@ -128,6 +135,11 @@ Besides the usual Laravel settings (`APP_*`, `DB_*`, `MAIL_*`), these are specif
 | `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | (empty) | Google OAuth client for calendar sync |
 | `GOOGLE_REDIRECT_URI` | `${APP_URL}/settings/calendar/google/callback` | Must match the URI registered with Google |
 | `GOOGLE_FREEBUSY_CACHE_SECONDS` | `180` | How long Google free/busy answers are reused |
+| `BOOKING_AUTO_COMPLETE_AFTER_MINUTES` | `60` | When confirmed meetings become "completed" after they end |
+| `MARKI_INSTALL_ID` | (empty) | This install's stable ID for a CRM (`php artisan crm:install-id`) |
+| `CRM_WEBHOOK_URL` / `CRM_WEBHOOK_SECRET` | (empty) | Where booking webhooks go and the shared signing secret; webhooks are sent only when these and `MARKI_INSTALL_ID` are all set |
+| `CRM_API_URL` / `CRM_API_KEY` | (empty) | CRM base URL and a `lookup`-only API key, for the "existing customer" badge |
+| `CRM_LOOKUP_CACHE_SECONDS` | `600` | How long CRM lookup answers are reused |
 
 Defaults that are not secrets (working hours for new members, reminder choices, event-type defaults, reserved usernames) live in [`config/booking.php`](config/booking.php).
 
@@ -164,6 +176,7 @@ vendor/bin/pint
 | `app/Services/Booking/BookingService.php` | Booking, cancelling and rescheduling under the per-host lock |
 | `app/Services/Calendar/` | `CalendarProvider` interface and the Google implementation |
 | `app/Services/Ics/IcsGenerator.php` | RFC 5545 calendar files |
+| `app/Services/Crm/`, `app/Jobs/SendCrmWebhook.php` | Optional CRM webhooks (contract samples in `tests/Fixtures/crm-webhooks/`) and the contact lookup |
 | `app/Mail/`, `resources/views/emails/` | Guest and host emails (HTML and plain text) |
 | `app/Listeners/`, `app/Jobs/` | Calendar sync, emails and reminders, wired in `AppServiceProvider` |
 | `routes/console.php` | Everything the every-minute cron job runs |

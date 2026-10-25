@@ -27,7 +27,7 @@ class TeamPageController extends Controller
         ]);
     }
 
-    public function book(Team $team, string $slug): View
+    public function book(Request $request, Team $team, string $slug): View
     {
         $eventType = $this->eventType($team, $slug);
 
@@ -37,6 +37,7 @@ class TeamPageController extends Controller
             'config' => $this->calendarConfig($eventType, route('public.team.slots', [$team, $slug])),
             'formAction' => route('public.team.book.store', [$team, $slug]),
             'reschedule' => null,
+            'prefill' => $this->guestPrefill($request),
         ]);
     }
 

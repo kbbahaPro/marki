@@ -35,7 +35,7 @@ class BookingPageController extends Controller
     /**
      * The booking page: calendar, times and the booking form.
      */
-    public function show(string $username, string $slug): View
+    public function show(Request $request, string $username, string $slug): View
     {
         $eventType = $this->eventType($username, $slug);
 
@@ -45,6 +45,7 @@ class BookingPageController extends Controller
             'config' => $this->calendarConfig($eventType, route('public.slots', [$username, $slug])),
             'formAction' => route('public.book.store', [$username, $slug]),
             'reschedule' => null,
+            'prefill' => $this->guestPrefill($request),
         ]);
     }
 

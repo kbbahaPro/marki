@@ -157,13 +157,13 @@
                     <div class="grid gap-5 sm:grid-cols-2">
                         <div>
                             <x-input-label for="name" :value="__('Name')" />
-                            <x-text-input id="name" name="name" type="text" class="mt-1.5" :value="old('name')" required maxlength="255" autocomplete="name" />
+                            <x-text-input id="name" name="name" type="text" class="mt-1.5" :value="old('name', $prefill['name'] ?? null)" required maxlength="255" autocomplete="name" />
                             <x-input-error class="mt-2" :messages="$errors->get('name')" />
                         </div>
 
                         <div>
                             <x-input-label for="email" :value="__('Email')" />
-                            <x-text-input id="email" name="email" type="email" class="mt-1.5" :value="old('email')" required maxlength="255" autocomplete="email" />
+                            <x-text-input id="email" name="email" type="email" class="mt-1.5" :value="old('email', $prefill['email'] ?? null)" required maxlength="255" autocomplete="email" />
                             <x-input-error class="mt-2" :messages="$errors->get('email')" />
                         </div>
                     </div>

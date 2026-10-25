@@ -138,6 +138,25 @@
                         @endif
                     </dd>
 
+                    @if ($crmContact)
+                        <dt class="text-ink-3">{{ __('CRM') }}</dt>
+                        <dd class="text-ink" data-crm-badge>
+                            <span class="pill-success">{{ __('Existing customer') }}</span>
+                            <div class="mt-2 space-y-0.5 text-ink-2">
+                                @if ($crmContact['owner_name'])
+                                    <div>{{ __('Owner: :name', ['name' => $crmContact['owner_name']]) }}</div>
+                                @endif
+                                @if ($crmContact['companies'])
+                                    <div>{{ implode(', ', $crmContact['companies']) }}</div>
+                                @endif
+                                <div>{{ trans_choice('{0} No open deals|{1} 1 open deal|[2,*] :count open deals', $crmContact['open_deals_count']) }}</div>
+                            </div>
+                            @if ($crmContact['crm_url'])
+                                <a href="{{ $crmContact['crm_url'] }}" class="mt-1 inline-block text-primary-ink underline" target="_blank" rel="noopener noreferrer">{{ __('Open in CRM') }}</a>
+                            @endif
+                        </dd>
+                    @endif
+
                     @foreach ($booking->answers as $answer)
                         <dt class="text-ink-3">{{ $answer->label }}</dt>
                         <dd class="text-ink whitespace-pre-line">{{ $answer->value ?? '—' }}</dd>

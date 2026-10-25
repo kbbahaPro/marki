@@ -46,6 +46,23 @@ trait RendersBookingCalendar
     }
 
     /**
+     * Name and email to start the form with, from ?name=&email= (links from a
+     * CRM's "Book a meeting" button). Anything unusable is ignored.
+     *
+     * @return array{name: ?string, email: ?string}
+     */
+    protected function guestPrefill(Request $request): array
+    {
+        $name = $request->query('name');
+        $email = $request->query('email');
+
+        return [
+            'name' => is_string($name) && trim($name) !== '' ? mb_substr(trim($name), 0, 255) : null,
+            'email' => is_string($email) && mb_strlen($email) <= 255 && filter_var(trim($email), FILTER_VALIDATE_EMAIL) ? trim($email) : null,
+        ];
+    }
+
+    /**
      * Available start times for one month, grouped by date in the guest's time zone.
      */
     protected function slotsResponse(Request $request, AvailabilityService $availability, EventType $eventType, ?Booking $ignoring = null): JsonResponse

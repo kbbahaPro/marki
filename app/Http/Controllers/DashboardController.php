@@ -10,6 +10,7 @@ use App\Jobs\SyncBookingToCalendar;
 use App\Models\Booking;
 use App\Models\User;
 use App\Services\Booking\BookingService;
+use App\Services\Crm\CrmLookup;
 use App\Services\Scheduling\AvailabilityService;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
@@ -59,13 +60,15 @@ class DashboardController extends Controller
         ]);
     }
 
-    public function show(Request $request, Booking $booking): View
+    public function show(Request $request, CrmLookup $crm, Booking $booking): View
     {
         $this->authorizeHost($request, $booking);
 
         return view('dashboard.booking', [
             'booking' => $booking->load(['eventType.team', 'host', 'hosts', 'cancelledBy', 'answers', 'rescheduledFrom', 'rescheduledTo']),
-            'timezone' => $request->user()->timezone,        ]);
+            'timezone' => $request->user()->timezone,
+            'crmContact' => $crm->contact($booking->guest_email),
+        ]);
     }
 
     public function cancel(Request $request, BookingService $bookings, Booking $booking): RedirectResponse
